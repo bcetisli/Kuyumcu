@@ -5,7 +5,7 @@ import subprocess
 # Local file and version
 local_version = "2.1"
 local_file = "github_update.py"
-github_url = "https://github.com/bcetisli/Piyasa_Fiyatlari/blob/main/update.json"  # GitHub raw file URL
+github_url = "https://github.com/bcetisli/Kuyumcu/main/update.json"  # GitHub raw file URL
 
 
 # Fetch the latest version from GitHub
