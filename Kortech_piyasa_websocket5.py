@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore")
 
 ilk = 0
 logo_flag = 1
-local_version = "5.9"
+local_version = "5.11"
 local_file = "Kortech_piyasa_websocket5.py"
 github_url = "https://raw.githubusercontent.com/bcetisli/Kuyumcu/main/update.json"
 
