@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore")
 
 ilk = 0
 logo_flag = 1
-local_version = "5.11"
+local_version = "5.12"
 local_file = "Kortech_piyasa_websocket5.py"
 github_url = "https://raw.githubusercontent.com/bcetisli/Kuyumcu/main/update.json"
 
@@ -32,7 +32,7 @@ gun_isimleri = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumart
 ay_isimleri = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
 HAS_ALIS_OLD = 0.0
 HAS_SATIS_OLD = 0.0
-HAS_YUZDE_OLD =0.0
+HAS_YUZDE_OLD = 0.0
 USD_ALIS_OLD = 0.0
 USD_SATIS_OLD = 0.0
 EUR_ALIS_OLD = 0.0
@@ -224,8 +224,8 @@ response =requests.get(github_url)
 #print(response.json())
 if response.status_code == 200:
     latest_code = response.json()
-    latest_version = float(latest_code["version"])
-    if latest_version > float(local_version):
+    latest_version = latest_code["version"]#float(latest_code["version"])
+    if latest_version != local_version:#float(local_version):
         update_url = latest_code["file_url"]
         try:
             with open(address+local_file,"w") as f:
@@ -233,7 +233,7 @@ if response.status_code == 200:
                 if response.status_code == 200:
                     #print(response.text)
                     f.write(response.text)
-                    subprocess.run("python3",address+local_file)
+                    subprocess.run(["sudo", "reboot"])#["python3", address+local_file])
         except :
             QMessageBox.warning(self,"Güncelleme", "Güncel dosya kaydedilemedi")
             #print("dosya kaydedilemedi")
@@ -2004,3 +2004,4 @@ if __name__ == "__main__":
         msg_box.setText("Girilen MAC adresi bu cihaza ait değil")
         msg_box.setIcon(QMessageBox.Information)
         msg_box.exec_()
+
