@@ -1,41 +1,31 @@
-
 import time
 from datetime import date
 from datetime import datetime  
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QLabel, QGroupBox, QGridLayout, QPushButton, QLineEdit, QComboBox, QColorDialog, QCheckBox, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QTextEdit, QLabel, QGroupBox, QGridLayout, QPushButton, QLineEdit, QComboBox, QColorDialog, QCheckBox, QMessageBox
 from PyQt5.QtCore import Qt, QTimer# QThread
-from PyQt5.QtGui import QPixmap, QFont#, QColor
+from PyQt5.QtGui import QPixmap, QFont, QTextCursor#, QColor
 import json
 import os
 import subprocess
 import asyncio
 import websockets
 import warnings
+import requests
+import re
+import threading#multiprocessing
 warnings.filterwarnings("ignore")
 
-local_version = "5.1"
+ilk = 0
+logo_flag = 1
+local_version = "5.9"
 local_file = "Kortech_piyasa_websocket5.py"
 github_url = "https://raw.githubusercontent.com/bcetisli/Kuyumcu/main/update.json"
 
 address = "/home/Kortech/Downloads/"
-response =requests.get(github_url)
-if response.status_code == 200:
-    latest_code = response.json()
-    latest_version = float(latest_code["version"])
-    if latest_version > float(local_version):
-        update_url = latest_code["file_url"]
-        try:
-            with open(address+local_file,"w") as f:
-                response =requests.get(update_url)
-                if response.status_code == 200:
-                    f.write(response)
-                    subprocess.run("python3",address+local_file)
-        except Error as e:
-            print("dosya kaydedilemedi")
+
 # Altın fiyatlarının bulunduğu sayfanın URL'si
 gold_prices_url = 'https://www.adadagold.com/'
-
 
 #Türkçe gün ve ay isimleri
 gun_isimleri = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"]
@@ -47,7 +37,8 @@ USD_ALIS_OLD = 0.0
 USD_SATIS_OLD = 0.0
 EUR_ALIS_OLD = 0.0
 EUR_SATIS_OLD = 0.0
-
+doviz_data = [("USD", 0.0, 0.0), ("EUR", 0.0, 0.0)]
+#doviz_vitrin = [("USD", 0.0, 0.0, 0.0), ("EUR", 0.0, 0.0, 0.0)]
 try:
     json_file_open = address +'default_factors1.json'
     with open(json_file_open, 'r', encoding = 'utf-8') as json_file:
@@ -65,11 +56,13 @@ try:
     with open(json_file_open, 'r', encoding = 'utf-8') as json_file:
         default_factors_renk = json.load(json_file)
 except FileNotFoundError:
-    default_factors_renk = {} 
-
+    default_factors_renk = {}
+    
 yazi_renk =	default_factors_renk['yazi_renk']['HEX']#"#ffffff"
 arka_fon1 = default_factors_renk['arka_fon1']['HEX']#"lightBlue"
-arka_fon2 =	default_factors_renk['arka_fon2']['HEX']#"darkBlue" 
+arka_fon2 =	default_factors_renk['arka_fon2']['HEX']#"darkBlue"
+
+
 '''
 # Varsayılan çarpanlar
 default_factors = {
@@ -199,7 +192,10 @@ class WifiManager(QWidget):
         char = sender.text()
         if self.caps_lock_flag:
             char = char.upper()
-        self.active_input.insert(sender.text())
+        if active_input == self.logo_input:
+            self.active_input.insertPlainText(sender.text())
+        else:
+            self.active_input.insert(sender.text())
     
     def delete_char(self):
         current_text = self.active_input.text()
@@ -207,8 +203,10 @@ class WifiManager(QWidget):
       
     def space_char(self):
         current_text = self.active_input.text()
-        
-        self.active_input.insert(" ")
+        if active_input == self.logo_input:
+            self.active_input.insertPlainText(" ")
+        else:
+            self.active_input.insert(" ")
     
     def toggle_caps_lock(self):
         self.caps_lock_flag = not self.caps_lock_flag
@@ -221,9 +219,40 @@ class WifiManager(QWidget):
                     button.setText(button.text().upper())
                 else:
                     button.setText(button.text().lower())
-                    
+
+response =requests.get(github_url)
+#print(response.json())
+if response.status_code == 200:
+    latest_code = response.json()
+    latest_version = float(latest_code["version"])
+    if latest_version > float(local_version):
+        update_url = latest_code["file_url"]
+        try:
+            with open(address+local_file,"w") as f:
+                response =requests.get(update_url)
+                if response.status_code == 200:
+                    #print(response.text)
+                    f.write(response.text)
+                    subprocess.run("python3",address+local_file)
+        except :
+            QMessageBox.warning(self,"Güncelleme", "Güncel dosya kaydedilemedi")
+            #print("dosya kaydedilemedi")
+            
+
+try:
+    result = subprocess.check_output(['ifconfig', "wlan0"]).decode('utf-8')
+    mac_address = re.search(r'ether ([\w:]+)',result).group(1)
+    #print(mac_address)
+except Exception as e:
+    print(f"Hata MAC: {e}")
+kayitli_MAC_address = default_factors_renk["ana_renk"]["HEX"]
+temp = kayitli_MAC_address.split(":")
+temp2 = temp[::-1]
+kayitli_MAC_address =":".join(temp2)
+#print(f"MAC Adress: {kayitli_MAC_address}")
+
 async def connect_and_listen():
-    global HAS_ALIS_OLD, HAS_SATIS_OLD, USD_ALIS_OLD, USD_SATIS_OLD, EUR_ALIS_OLD, EUR_SATIS_OLD
+    global HAS_ALIS_OLD, HAS_SATIS_OLD, USD_ALIS_OLD, USD_SATIS_OLD, EUR_ALIS_OLD, EUR_SATIS_OLD, doviz_data, default_factors1
     uri = "wss://adadagold.com/wss/"
     deneme = 0
     max_deneme = 4
@@ -234,20 +263,38 @@ async def connect_and_listen():
     doviz_data = [('USD', USD_ALIS_OLD, USD_SATIS_OLD), ('EUR', EUR_ALIS_OLD, EUR_SATIS_OLD)]
     #while deneme < max_deneme:
     try:
-        async with websockets.connect(uri) as websocket:
-            message = await websocket.recv()
-            veriler = json.loads(message)                
-            for veri in veriler:
-                if veri['kod'] == "HasAltin":
-                    has_altin = ('HAS', veri['alis'], veri['satis'], 0.0)
-                    has = (veri['alis'], veri['satis'])
-                elif veri['kod'] == "Usd":
-                    usd = (veri['alis'], veri['satis'])
-                elif veri['kod'] == "Euro":
-                    eur = (veri['alis'], veri['satis'])
-                    doviz_data = [('USD', usd[0], usd[1]), ('EUR', eur[0], eur[1])]
-                if eur[0] > 0.0:
-                    break
+        async with websockets.connect(uri, timeout = 10) as websocket:
+            message = await websocket.recv()            
+            try:
+                veriler = json.loads(message)
+                for veri in veriler:
+                    if veri['kod'] == "HasAltin":
+                        has_altin = ('HAS', veri['alis'], veri['satis'], 0.0)
+                        has = (veri['alis'], veri['satis'])
+                    elif veri['kod'] == "Usd":
+                        alis = round(veri['alis'] + default_factors1["USD"]["AlisY"], 2)
+                        satis = round(veri['satis'] + default_factors1["USD"]["SatisY"], 2)
+                        usd = (alis, satis)#(veri['alis'], veri['satis'])
+                    elif veri['kod'] == "Euro":
+                        alis = round(veri['alis'] + default_factors1["EUR"]["AlisY"], 2)
+                        satis = round(veri['satis'] + default_factors1["EUR"]["SatisY"], 2)
+                        eur = (alis, satis)#(veri['alis'], veri['satis'])
+                        #eur = (veri['alis'], veri['satis'])
+                        doviz_data = [('USD', usd[0], usd[1]), ('EUR', eur[0], eur[1])]
+                    if eur[0] > 0.0:
+                        break
+            except json.JSONDecodeError as ej:
+                has_altin_tmp, doviz_data_tmp = await altinkaynak_fiyat_al()
+                if has_altin_tmp[1] > 0.0:
+                    has_altin = has_altin_tmp
+                if doviz_data_tmp[0][1] > 0.0:
+                   doviz_data = doviz_data_tmp 
+    except asyncio.TimeoutError as e:
+        has_altin_tmp, doviz_data_tmp = await altinkaynak_fiyat_al()
+        if has_altin_tmp[1] > 0.0:
+            has_altin = has_altin_tmp
+        if doviz_data_tmp[0][1] > 0.0:
+            doviz_data = doviz_data_tmp 
     except websockets.exceptions.InvalidStatusCode as e:
         if e.status_code == 503 or usd[0] == 0.0 or has[0] == 0.0:
             has_altin_tmp, doviz_data_tmp = await altinkaynak_fiyat_al()
@@ -259,8 +306,49 @@ async def connect_and_listen():
             #await asyncio.sleep(gecikme)
         else:
             raise
+    except Exception as e:
+        has_altin_tmp, doviz_data_tmp = await altinkaynak_fiyat_al()
+        if has_altin_tmp[1] > 0.0:
+            has_altin = has_altin_tmp
+        if doviz_data_tmp[0][1] > 0.0:
+            doviz_data = doviz_data_tmp
+                  
     return has_altin, doviz_data
 
+def sarrafiye_hesapla(has_alis, has_satis):
+    global default_factors2
+    data = {}        
+    i = 0
+    for key, value in default_factors2.items():
+        if key == "USD" or key == "EUR":
+            continue
+        else:
+            altin_turu = key# Çeyrek altın için yapılacak işlemler
+            alis_yeni = round(value['AlisY'] * has_alis) 
+            satis_yeni = round(value['SatisY'] * has_satis) 
+            k_karti = round(value['SatisY'] * has_satis * value['K_Karti']) 
+            data[i] = (altin_turu, alis_yeni, satis_yeni, k_karti)#, satis_eski)
+            i +=1
+        
+    return data
+
+def doviz_hesapla():
+    global default_factors1, doviz_data
+    data = {}
+    temp =list(doviz_data)
+    i = 0
+    for value in doviz_data:
+        if value[0] == "USD":
+            alis = round(value[1] + default_factors1["USD"]["AlisY"], 2)
+            satis = round(value[2] + default_factors1["USD"]["SatisY"], 2)
+            #k_karti = round((value[2] + default_factors1["USD"]["SatisY"]) * default_factors1["USD"]['K_Karti'], 2) 
+        elif value[0] == "EUR":
+            alis = round(value[1] + default_factors1["EUR"]["AlisY"], 2)
+            satis = round(value[2] + default_factors1["EUR"]["SatisY"], 2)
+            #k_karti = round((value[2] + default_factors1["EUR"]["SatisY"]) * default_factors1["EUR"]['K_Karti'], 2) 
+        data[i] = (value[0], alis, satis)#, k_karti)#, satis_eski)
+        i+=1
+    return data
 '''#Asyncio döngüsünü başlat
 has_altin, doviz_data = asyncio.get_event_loop().run_until_complete(connect_and_listen())
 HAS_GUN = has_altin[2]
@@ -274,9 +362,13 @@ async def altinkaynak_fiyat_al():
             if item["Kod"] =='USD':
                 USD_alis = float(item["Alis"].replace(",","."))
                 USD_satis = float(item["Satis"].replace(",","."))
+                USD_alis = round(USD_alis + default_factors1["USD"]["AlisY"], 2)
+                USD_satis = round(USD_satis + default_factors1["USD"]["SatisY"], 2)                        
             elif item["Kod"] == 'EUR':
                 EUR_alis = float(item["Alis"].replace(",","."))
                 EUR_satis = float(item["Satis"].replace(",","."))
+                EUR_alis = round(EUR_alis + default_factors1["EUR"]["AlisY"], 2)
+                EUR_satis = round(USD_satis + default_factors1["EUR"]["SatisY"], 2) 
                 break
             
         doviz_data = [('USD', USD_alis, USD_satis), ('EUR', EUR_alis, EUR_satis)]
@@ -289,20 +381,22 @@ async def altinkaynak_fiyat_al():
             if item["Kod"] =='HH':
                 alis = item["Alis"].replace(".","")
                 has_alis = float(alis.replace(",","."))
-                alis = item["Satis"].replace(".","")
+                satis = item["Satis"].replace(".","")
                 has_satis = float(satis.replace(",","."))
                 has_altin = ('HAS', has_alis, has_satis, 0.0)
                 break    
     return has_altin, doviz_data
-    
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
+        global ilk, HAS_GUN, has_altin, doviz_data, default_factors_renk
         super().__init__()
         self.flag_liste = 1
         self.setWindowTitle("Piyasa Fiyatları")
         self.setGeometry(100, 100, 800, 600)
         self.showMaximized()
-        self.screen_width = self.screen().size().width()
+        #self.screen_width = self.screen().size().width()
         #print('Ekran genişliği', self.screen_width)
         # Arka plan rengini değiştirmek için stil sayfası ayarı
         #self.setStyleSheet('QWidget { background-color: lightblue; }')
@@ -312,15 +406,48 @@ class MainWindow(QMainWindow):
                 
         
         # Logo resmi ekleyin
-        self.logo_label = QLabel()
-        image_path = address +"Uslu_kuyumculuk2.jpg"
-        if not os.path.exists(image_path):
-            print("resim dosyası bulunamadı",image_path)
-            return
-        pixmap = QPixmap(image_path)  # Logonun dosya yolunu buraya ekleyin
-        self.logo_label.setPixmap(pixmap)
-        self.logo_label.setStyleSheet("background-color: lightBlue;")
-        top_layout.addWidget(self.logo_label,stretch=2)
+        
+        image_path = address +"logo.jpg"
+        if not os.path.exists(image_path) or logo_flag == 0:
+            QMessageBox.warning(self,"Logo", "logo.jpg resim dosyası bulunamadı.")
+            #print("resim dosyası bulunamadı",image_path)
+            text_font = default_factors_renk["logo_font"]
+            
+            self.logo_label = QLabel(default_factors_renk["logo_content"])
+            text_fontsize = (int(default_factors_renk["logo_fontsize"]))
+            #self.font = font_y
+            text_backgrnd = default_factors_renk["logo_arka_fon"]["HEX"]
+            text_color = default_factors_renk['logo_yazi_renk']["HEX"]
+            text_bold = default_factors_renk["logo_fontweight"]
+            text_bold = "bold"
+            text_italic = default_factors_renk["logo_fontitalic"]
+            '''
+            if text_bold == 75:
+                self.logo_label.setItalic()
+            text_italic = default_factors_renk["logo_fontitalic"]
+            '''
+            if text_italic == True:
+                text_italic = "italic"
+            else:
+                text_italic = ""
+            
+            text_alignment = default_factors_renk["logo_alignment"]            
+            if text_alignment == 1:
+                self.logo_label.setAlignment(Qt.AlignLeft)
+            elif text_alignment == 2:
+                self.logo_label.setAlignment(Qt.AlignRight)
+            elif text_alignment == 8:
+                self.logo_label.setAlignment(Qt.AlignJustify)    
+            
+            self.logo_label.setStyleSheet(f"font: {text_font}; font-size: {text_fontsize}px;background-color:{text_backgrnd};color:{text_color};font-weight: {text_bold};font-style: {text_italic};")#setFont(font_y)
+            #self.logo_label.setStyleSheet("background-color: lightBlue;")
+            top_layout.addWidget(self.logo_label,stretch=2)
+        else:
+            self.logo_label = QLabel()
+            pixmap = QPixmap(image_path)  # Logonun dosya yolunu buraya ekleyin
+            self.logo_label.setPixmap(pixmap)
+            self.logo_label.setStyleSheet("background-color: lightBlue;color: red; font-size: 36px;")
+            top_layout.addWidget(self.logo_label,stretch=2)
 
         self.doviz_group = self.create_group_doviz("")
         top_layout.addWidget(self.doviz_group, stretch=2) 
@@ -372,7 +499,7 @@ class MainWindow(QMainWindow):
         self.logo_label_Kortech = QLabel()
         image_path2 = address +"Kortech logo3.png"
         if not os.path.exists(image_path2):
-            print("resim dosyası bulunamadı",image_path2)
+            #print("resim dosyası bulunamadı",image_path2)
             return
         pixmap2 = QPixmap(image_path2)  # Logonun dosya yolunu buraya ekleyin
         self.logo_label_Kortech.setPixmap(pixmap2)
@@ -405,10 +532,34 @@ class MainWindow(QMainWindow):
         container = QWidget()
         container.setLayout(layout)
         self.setCentralWidget(container)
+        #Asyncio döngüsünü başlat
+        has_altin, doviz_data = asyncio.run(connect_and_listen())#asyncio.get_event_loop().run_until_complete(connect_and_listen())
+        HAS_GUN = has_altin[2]            
+        self.update_data()
+        self.create_grid()
+        self.update_datetime()
+        '''
+        if ilk == 0:
+            self.timer = QTimer(self)
+            self.timer.timeout.connect()
+            self.timer.timeout.connect()
+            self.timer.timeout.connect(e)
+            self.timer.start(1000)  # 10 saniye (10,000 ms)
+            ilk = 1
+        #else:
         
+            
+            thread_data = threading.Thread(target = self.update_data)
+            thread_grid = threading.Thread(target = self.update_grid)
+            thread_data.start()
+            thread_grid.start()
+            thread_data.join()
+            thread_grid.join()
+            '''
         # Timer ayarla
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_data)
+        self.timer.timeout.connect(self.update_grid)
         self.timer.timeout.connect(self.update_datetime)
         self.timer.start(1000)  # 10 saniye (10,000 ms)
     
@@ -445,96 +596,100 @@ class MainWindow(QMainWindow):
         return group
     
     def update_data(self):
-        global default_factors2, HAS_ALIS, HAS_SATIS, HAS_ALIS_OLD, HAS_SATIS_OLD,HAS_YUZDE, HAS_YUZDE_OLD
-        global USD_ALIS_OLD,USD_SATIS_OLD, EUR_ALIS_OLD, EUR_SATIS_OLD
-        try:
         
-            #Asyncio döngüsünü başlat
-            has_altin, doviz_data = asyncio.run(connect_and_listen())#asyncio.get_event_loop().run_until_complete(connect_and_listen())
-                        
-            HAS_ALIS = has_altin[1]
-            HAS_SATIS = has_altin[2]
-            if HAS_ALIS != HAS_ALIS_OLD or HAS_SATIS != HAS_SATIS_OLD:
-                if HAS_ALIS is None:
-                    HAS_ALIS = HAS_ALIS_OLD
-                else:
-                    HAS_ALIS_OLD = HAS_ALIS   
-                
-                if HAS_SATIS is None:
-                    HAS_SATIS = HAS_SATIS_OLD
-                else:
-                    HAS_SATIS_OLD = HAS_SATIS
-                HAS_YUZDE = 100 * (HAS_SATIS - HAS_GUN) / HAS_GUN#float(yuzde_degisim_element.text[1:].replace(",", "."))
-                if HAS_YUZDE is None:
-                    HAS_YUZDE = HAS_YUZDE_OLD
-                else:
-                    HAS_YUZDE_OLD = HAS_YUZDE
-                       
-                # Altın Fiyatları
-                altin_data = self.sarrafiye_hesapla(has_altin[1], has_altin[2])
-                sayi = len(altin_data)
-            if sayi == 7:
-                self.altin_group = self.update_group_sarrafiye(self.altin_group, altin_data, has_altin[3])
-            elif sayi > 7:
-                fark = len(altin_data) - 7
-                temp = altin_data 
-                if self.flag_liste == 1:                                       
-                    for ss in range(7,sayi):
-                        del temp[ss]
-                    self.altin_group = self.update_group_sarrafiye(self.altin_group, temp, has_altin[3])
-                    self.flag_liste = 0
-                elif self.flag_liste == 0:                     
-                    for ss in range(7-fark,7):
-                        del temp[ss]
-                    self.altin_group = self.update_group_sarrafiye(self.altin_group, temp, has_altin[3])
-                    self.flag_liste = 1
-                    
-            # Döviz Kurları           
-            if len(doviz_data) == 2:
-                USD_ALIS_OLD = doviz_data[0][1]
-                USD_SATIS_OLD = doviz_data[0][2]
-                EUR_ALIS_OLD = doviz_data[1][1]
-                EUR_SATIS_OLD = doviz_data[1][2]               
-            elif doviz_data[0][1] is None:
-                    doviz_data[0][1] = USD_ALIS_OLD
-            elif doviz_data[0][2] is None:
-                    doviz_data[0][2] = USD_SATIS_OLD
-            elif doviz_data[1][1] is None:
-                    doviz_data[1][1] = EUR_ALIS_OLD
-            elif doviz_data[1][2] is None:
-                    doviz_data[1][2] = EUR_SATIS_OLD
-            
-            '''
-            print(f'USD Alış Fiyatı: {doviz_data[0][1]}') 
-            print(f'USD Satış Fiyatı: {doviz_data[0][2]}')
-            print(f'EUR Alış Fiyatı: {doviz_data[1][1]}') 
-            print(f'EUR Satış Fiyatı: {doviz_data[1][2]}')
-            '''
-            self.update_group_doviz(self.doviz_group, doviz_data)       
-            
-
-        except Exception as e:
-            print(f"Hata:{e}")            
-    
-   
-    def sarrafiye_hesapla(self, has_alis, has_satis):
-        global default_factors2
-        data = {}        
-        i = 0
-        for key, value in default_factors2.items():
-            if key == "USD" or key == "EUR":
-                continue
+        global HAS_ALIS, HAS_SATIS, HAS_ALIS_OLD, HAS_SATIS_OLD,HAS_YUZDE, HAS_YUZDE_OLD
+        global USD_ALIS_OLD,USD_SATIS_OLD, EUR_ALIS_OLD, EUR_SATIS_OLD, has_altin, doviz_data, altin_data 
+        #Asyncio döngüsünü başlat
+        has_altin, doviz_data = asyncio.run(connect_and_listen())#asyncio.get_event_loop().run_until_complete(connect_and_listen())                       
+        HAS_ALIS = has_altin[1]
+        HAS_SATIS = has_altin[2]
+        if HAS_ALIS != HAS_ALIS_OLD or HAS_SATIS != HAS_SATIS_OLD:
+            if HAS_ALIS is None:
+                HAS_ALIS = HAS_ALIS_OLD
             else:
-                altin_turu = key# Çeyrek altın için yapılacak işlemler
-                alis_yeni = round(value['AlisY'] * has_alis) 
-                satis_yeni = round(value['SatisY'] * has_satis) 
-                k_karti = round(value['SatisY'] * has_satis * value['K_Karti']) 
-                data[i] = (altin_turu, alis_yeni, satis_yeni, k_karti)#, satis_eski)
-                i +=1
+                HAS_ALIS_OLD = HAS_ALIS   
             
-        return data
-
+            if HAS_SATIS is None:
+                HAS_SATIS = HAS_SATIS_OLD
+            else:
+                HAS_SATIS_OLD = HAS_SATIS
+            HAS_YUZDE = 100 * (HAS_SATIS - HAS_GUN) / HAS_GUN#float(yuzde_degisim_element.text[1:].replace(",", "."))
+            if HAS_YUZDE is None:
+                HAS_YUZDE = HAS_YUZDE_OLD
+            else:
+                HAS_YUZDE_OLD = HAS_YUZDE
+                   
+        # Altın Fiyatları
+        altin_data = sarrafiye_hesapla(has_altin[1], has_altin[2])
+        # Döviz Kurları           
+        if len(doviz_data) == 2:
+            USD_ALIS_OLD = doviz_data[0][1]
+            USD_SATIS_OLD = doviz_data[0][2]
+            EUR_ALIS_OLD = doviz_data[1][1]
+            EUR_SATIS_OLD = doviz_data[1][2]               
+        elif doviz_data[0][1] is None:
+                doviz_data[0][1] = USD_ALIS_OLD
+        elif doviz_data[0][2] is None:
+                doviz_data[0][2] = USD_SATIS_OLD
+        elif doviz_data[1][1] is None:
+                doviz_data[1][1] = EUR_ALIS_OLD
+        elif doviz_data[1][2] is None:
+                doviz_data[1][2] = EUR_SATIS_OLD
     
+    def create_grid(self):        
+        global has_altin, doviz_data, altin_data
+        
+        #try:       
+        sayi = len(altin_data)
+        if sayi == 7:
+            self.altin_group = self.create_gridlayout_sarrafiye(self.altin_group, altin_data, has_altin[3])
+        elif sayi > 7:
+            fark = len(altin_data) - 7
+            temp = altin_data 
+            if self.flag_liste == 1:                                       
+                for ss in range(7,sayi):
+                    del temp[ss]
+                self.altin_group = self.create_gridlayout_sarrafiye(self.altin_group, temp, has_altin[3])
+                self.flag_liste = 0
+            elif self.flag_liste == 0:                     
+                for ss in range(7-fark,7):
+                    del temp[ss]
+                self.altin_group = self.create_gridlayout_sarrafiye(self.altin_group, temp, has_altin[3])
+                self.flag_liste = 1
+     
+        self.create_gridlayout_doviz(self.doviz_group)       
+            
+
+        #except Exception as e:
+        #    print(f"Hata:{e}")            
+         
+    def update_grid(self):        
+        global has_altin, doviz_data, altin_data
+        self.update_gridlayout_doviz(self.doviz_group)
+        #try:       
+        sayi = len(altin_data)
+        if sayi == 7:
+            self.altin_group = self.update_gridlayout_sarrafiye(self.altin_group, altin_data, has_altin[3])
+        elif sayi > 7:
+            fark = len(altin_data) - 7
+            temp = altin_data 
+            if self.flag_liste == 1:                                       
+                for ss in range(7,sayi):
+                    del temp[ss]
+                self.altin_group = self.update_gridlayout_sarrafiye(self.altin_group, temp, has_altin[3])
+                self.flag_liste = 0
+            elif self.flag_liste == 0:                     
+                for ss in range(7-fark,7):
+                    del temp[ss]
+                self.altin_group = self.update_gridlayout_sarrafiye(self.altin_group, temp, has_altin[3])
+                self.flag_liste = 1
+     
+               
+            
+
+        #except Exception as e:
+        #    print(f"Hata:{e}")            
+         
     
     def create_label(self, text, HAS_YUZDE,row, ky):
         colors = [arka_fon1, arka_fon2]#colors = ["lightblue", "deepskyblue", "lightblue", "deepskyblue", "lightblue", "deepskyblue", "lightblue", "deepskyblue"]
@@ -599,7 +754,7 @@ class MainWindow(QMainWindow):
         self.label_zaman.setText(f"{saat}:{dakika:02}")  # 2 haneli dakika     
 
     
-    def update_group_sarrafiye(self, group, data, HAS_YUZDE):
+    def create_gridlayout_sarrafiye(self, group, data, HAS_YUZDE):
         layout = group.layout()        
         group.setStyleSheet(
             'QGroupBox::title {'
@@ -629,12 +784,42 @@ class MainWindow(QMainWindow):
             layout.addWidget(self.create_label3(f"{value[0]}  ", 0.0, row), row, 0)
             layout.addWidget(self.create_label3(f"{self.format_number(self.round_number(value[1]))}  ", HAS_YUZDE, row), row, 1)
             layout.addWidget(self.create_label3(f"{self.format_number(self.round_number(value[2]))}  ", HAS_YUZDE, row), row, 2)
-            layout.addWidget(self.create_label3(f"{self.format_number(self.round_number(value[3]))}     ", HAS_YUZDE, row), row, 3)
+            layout.addWidget(self.create_label3(f"{self.format_number(self.round_number(value[3]))}       ", HAS_YUZDE, row), row, 3)
             row += 1
        
         return group
-    def update_group_doviz(self, group, data):
+    
+    def update_gridlayout_sarrafiye(self, group, data, HAS_YUZDE):
         layout = group.layout()
+        #print(f"satır: {layout.rowCount()}")
+        #print(f"sütun: {layout.columnCount()}")
+        #print(data)
+        veri =list(data)
+        for row in range(1, layout.rowCount()):
+            for col in range(layout.columnCount()):
+                item = layout.itemAtPosition(row,col)
+                if isinstance(item.widget(),QLabel):
+                    label = item.widget()
+                    #print(f'{label.objectName()} degeri: {label.text()}\n')
+                    if col == 0:
+                        label.setText(data[veri[row-1]][col])
+                    elif col == 3:
+                        label.setText(f"{self.format_number(self.round_number(data[veri[row-1]][col]))}       ")
+                    else:
+                        #print(data[row][col])
+                        label.setText(f"{self.format_number(self.round_number(data[veri[row-1]][col]))}  ")
+                    
+#         for key, value in data.items():            
+#             layout.addWidget(self.create_label3(f"{value[0]}  ", 0.0, row), row, 0)
+#             layout.addWidget(self.create_label3(f"{self.format_number(self.round_number(value[1]))}  ", HAS_YUZDE, row), row, 1)
+#             layout.addWidget(self.create_label3(f"{self.format_number(self.round_number(value[2]))}  ", HAS_YUZDE, row), row, 2)
+#             layout.addWidget(self.create_label3(f"{self.format_number(self.round_number(value[3]))}     ", HAS_YUZDE, row), row, 3)
+#             row += 1
+       
+        return group
+    
+    def create_gridlayout_doviz(self, group):
+        global default_factors1,doviz_data
         layout = group.layout()        
         group.setStyleSheet(
             'QGroupBox::title {'
@@ -657,15 +842,50 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.create_label2("ALIŞ"),row, 1)
         layout.addWidget(self.create_label2("SATIŞ"),row, 2)        
         row += 1
-        for value in data:
+        for value in doviz_data:
             layout.addWidget(self.create_label(f"{value[0]}  ",0.0,  row, 0), row, 0)
-            alis = round(value[1], 2) - 0.05
-            satis = round(value[2], 2) + 0.05
+            if value[0] =="USD":
+                alis = value[1]
+                satis = value[2]
+            elif value[0] =="EUR":
+                alis = value[1]
+                satis = value[2]
             alis_label = self.create_label(f"{alis:.2f} ", 0.0, row, 1)
             satis_label = self.create_label(f"{satis:.2f} ", 0.0, row, 2)
             layout.addWidget(alis_label, row, 1)
             layout.addWidget(satis_label, row, 2)            
             row += 1
+    
+    def update_gridlayout_doviz(self, group):
+        global default_factors1, doviz_data
+        layout = group.layout()
+        #print(f"satır: {layout.rowCount()}")
+        #print(f"sütun: {layout.columnCount()}")
+        for row in range(1, layout.rowCount()):
+            for col in range(layout.columnCount()):
+                item = layout.itemAtPosition(row,col)
+                if isinstance(item.widget(),QLabel):
+                    label = item.widget()
+                    #print(f'{label.objectName()} degeri: {label.text()}\n')
+                    if col == 0:
+                        label.setText(doviz_data[row-1][col])
+                    elif col == 1:
+                        alis = doviz_data[row-1][col]
+                        label.setText(f"{alis:.2f} ")
+                    else:
+                        satis = doviz_data[row-1][col]
+                        label.setText(f"{satis:.2f} ")
+                    
+#         for value in data:
+#             layout.addWidget(self.create_label(f"{value[0]}  ",0.0,  row, 0), row, 0)
+#             alis = round(value[1], 2) - 0.05
+#             satis = round(value[2], 2) + 0.05
+#             alis_label = self.create_label(f"{alis:.2f} ", 0.0, row, 1)
+#             satis_label = self.create_label(f"{satis:.2f} ", 0.0, row, 2)
+#             layout.addWidget(alis_label, row, 1)
+#             layout.addWidget(satis_label, row, 2)            
+#             row += 1
+    
     
     def format_number(self, number):
         return "{:,}".format(number).replace(",", ".")
@@ -688,16 +908,33 @@ class Window2(QWidget):
         self.setWindowTitle("Fiyat Ayarları")
         self.setGeometry(200, 200, 300, 150)
         self.move(20,40)
-
+        row, col = 0, 0 
         # Comboboxlar ve input box'ı yerleştirmek için grid oluşturma
         grid_layout = QGridLayout()
 
-        # 1. Satır: Comboboxlar
-        hbox0 = QHBoxLayout()
-        self.sarrafiye_label = QLabel('Mevcut Sarrafiye Cinsi')
+        # Comboboxlar
+        group_kayit = QGroupBox("Kayıtlı Sarrafiye Güncelleme")               
+        group_kayit.setStyleSheet(
+            'QGroupBox::title {'
+            'color: Red;'  # Yazı rengi
+            'font-size: 20px;'  # Yazı boyutu
+            'subcontrol-origin: margin;'  # Başlık konumu
+            'subcontrol-position: top left;'  # Başlığı ortala
+            '}'
+            'QGroupBox {'
+            'color: black;'            
+            'background-color: lightslategrey;'  # Arka plan rengi
+            'font-size: 20px;'  # Yazı boyutu
+            '}'
+        )
+        group_kayit.setContentsMargins(10,20,10,10)
+        hbox_kayit = QHBoxLayout()
+        hbox_kayit.setContentsMargins(10,20,10,10)
+        hbox_kayit.setSpacing(15)
+        self.sarrafiye_label = QLabel('Sarrafiye Cinsi')
         self.sarrafiye_label.setFixedHeight(40)
         #self.sarrafiye_label.setFixedWidth(80)
-        hbox0.addWidget(self.sarrafiye_label, alignment = Qt.AlignLeft)
+        hbox_kayit.addWidget(self.sarrafiye_label, alignment = Qt.AlignLeft)
         self.altin_turu_combobox = QComboBox(self)
         self.altin_turu_combobox.setStyleSheet('QComboBox{'
         'font-size: 20px;'
@@ -710,40 +947,40 @@ class Window2(QWidget):
         self.altin_turu_combobox.currentIndexChanged.connect(self.update_carpan_input_altin)
         self.altin_turu_combobox.setFixedHeight(40)
         #self.altin_turu_combobox.setFixedWidth(160)
-        hbox0.addWidget(self.altin_turu_combobox, alignment = Qt.AlignLeft)
+        hbox_kayit.addWidget(self.altin_turu_combobox, alignment = Qt.AlignLeft)
               
         self.sarrafiye_alis_label = QLabel('ALIŞ')
         self.sarrafiye_alis_label.setFixedHeight(40)
         #self.sarrafiye_alis_label.setFixedWidth(100)
-        hbox0.addWidget(self.sarrafiye_alis_label, alignment = Qt.AlignRight)
+        hbox_kayit.addWidget(self.sarrafiye_alis_label, alignment = Qt.AlignRight)
         self.sarrafiye_alis_input = QLineEdit(self)
         #self.sarrafiye_alis_input.setText("0.000")
         self.sarrafiye_alis_input.setAlignment(Qt.AlignCenter)
         self.sarrafiye_alis_input.setMaxLength(6) 
         self.sarrafiye_alis_input.mousePressEvent = self.set_active_input_sarrafiye_alis
         self.sarrafiye_alis_input.setFixedHeight(40)
-        hbox0.addWidget(self.sarrafiye_alis_input, alignment = Qt.AlignLeft)
+        hbox_kayit.addWidget(self.sarrafiye_alis_input, alignment = Qt.AlignLeft)
         
         self.sarrafiye_satis_label = QLabel('SATIŞ')
         self.sarrafiye_satis_label.setFixedHeight(40)
-        hbox0.addWidget(self.sarrafiye_satis_label, alignment = Qt.AlignRight)
+        hbox_kayit.addWidget(self.sarrafiye_satis_label, alignment = Qt.AlignRight)
         self.sarrafiye_satis_input = QLineEdit(self)
         self.sarrafiye_satis_input.setAlignment(Qt.AlignCenter)
         self.sarrafiye_satis_input.setMaxLength(6) 
         self.sarrafiye_satis_input.setFixedHeight(40)
         self.sarrafiye_satis_input.mousePressEvent = self.set_active_input_sarrafiye_satis
-        hbox0.addWidget(self.sarrafiye_satis_input, alignment = Qt.AlignLeft)
+        hbox_kayit.addWidget(self.sarrafiye_satis_input, alignment = Qt.AlignLeft)
         
         self.sarrafiye_satis_kk_label = QLabel('SATIŞ K. KARTI')
         self.sarrafiye_satis_kk_label.setFixedHeight(40)
-        hbox0.addWidget(self.sarrafiye_satis_kk_label, alignment = Qt.AlignRight)
+        hbox_kayit.addWidget(self.sarrafiye_satis_kk_label, alignment = Qt.AlignRight)
         self.sarrafiye_satis_kk_input = QLineEdit(self)
         #self.sarrafiye_satis_kk_input.setText("0.000")
         self.sarrafiye_satis_kk_input.setAlignment(Qt.AlignCenter)
         self.sarrafiye_satis_kk_input.setMaxLength(6) 
         self.sarrafiye_satis_kk_input.mousePressEvent = self.set_active_input_sarrafiye_satis_kk
         self.sarrafiye_satis_kk_input.setFixedHeight(40)
-        hbox0.addWidget(self.sarrafiye_satis_kk_input, alignment = Qt.AlignLeft)
+        hbox_kayit.addWidget(self.sarrafiye_satis_kk_input, alignment = Qt.AlignLeft)
         
         self.kaydet_button = QPushButton("KAYDET ALTIN", self)
         self.kaydet_button.setStyleSheet('QPushButton{'
@@ -752,7 +989,7 @@ class Window2(QWidget):
         ) 
         self.kaydet_button.clicked.connect(self.carpan_kaydet_altin)
         self.kaydet_button.setFixedHeight(40)
-        hbox0.addWidget(self.kaydet_button, alignment = Qt.AlignLeft)
+        hbox_kayit.addWidget(self.kaydet_button, alignment = Qt.AlignLeft)
         
         self.anasayfa_button = QPushButton("ANASAYFA", self)
         self.anasayfa_button.setStyleSheet('QPushButton{'
@@ -761,109 +998,68 @@ class Window2(QWidget):
         ) 
         self.anasayfa_button.clicked.connect(self.anasayfa)
         self.anasayfa_button.setFixedHeight(40)
-        hbox0.addWidget(self.anasayfa_button, alignment = Qt.AlignLeft)
-        grid_layout.addLayout(hbox0, 0, 0, 1, 5)
+        hbox_kayit.addWidget(self.anasayfa_button, alignment = Qt.AlignLeft)
+        group_kayit.setLayout(hbox_kayit)
+        grid_layout.addWidget(group_kayit,row , col, 1 , 5)
+        row +=1
         
-        
-        # 4. Satır: Döviz Ayar Satırı
-        hbox1 = QHBoxLayout()
-        self.doviz_label = QLabel('Döviz Cinsi           ')
-        self.doviz_label.setFixedHeight(40)
-        hbox1.addWidget(self.doviz_label, alignment = Qt.AlignLeft)
-        self.doviz_turu_combobox = QComboBox(self)
-        self.doviz_turu_combobox.setStyleSheet('QComboBox{'
-        'font-size: 20px;'
-        '}'
+        #json data ekle
+        group_ekle = QGroupBox("Yeni Sarrafiye Ekleme")
+        group_ekle.setStyleSheet(
+            'QGroupBox::title {'
+            'color: Red;'  # Yazı rengi
+            'font-size: 20px;'  # Yazı boyutu
+            'subcontrol-origin: margin;'  # Başlık konumu
+            'subcontrol-position: top left;'  # Başlığı ortala
+            '}'
+            'QGroupBox {'
+            'color: black;'            
+            'background-color: lightgrey;'  # Arka plan rengi
+            'font-size: 20px;'  # Yazı boyutu
+            '}'
         )
+        group_ekle.setContentsMargins(10,20,10,10)        
+        hbox_ekle = QHBoxLayout()
+        hbox_ekle.setContentsMargins(10,20,10,10)
+        hbox_ekle.setSpacing(15)
         
-        for key in default_factors1.keys():
-            self.doviz_turu_combobox.addItem(key)
-        
-        self.doviz_turu_combobox.currentIndexChanged.connect(self.update_carpan_input_doviz)
-        self.doviz_turu_combobox.setFixedHeight(40)
-        hbox1.addWidget(self.doviz_turu_combobox, alignment = Qt.AlignLeft) # 2 sütun genişliğinde
-        
-        self.doviz_alis_label = QLabel('ALIŞ')
-        self.doviz_alis_label.setFixedHeight(40)
-        hbox1.addWidget(self.doviz_alis_label, alignment = Qt.AlignRight)
-        self.doviz_alis_input = QLineEdit(self)
-        self.doviz_alis_input.setAlignment(Qt.AlignCenter)
-        self.doviz_alis_input.setMaxLength(6) 
-        self.doviz_alis_input.setFixedHeight(40)
-        self.doviz_alis_input.mousePressEvent = self.set_active_input_doviz_alis
-        hbox1.addWidget(self.doviz_alis_input, alignment = Qt.AlignLeft)
-        
-        self.doviz_satis_label = QLabel('SATIŞ')
-        self.doviz_satis_label.setFixedHeight(40)
-        hbox1.addWidget(self.doviz_satis_label, alignment = Qt.AlignRight)
-        self.doviz_satis_input = QLineEdit(self)
-        #self.sarrafiye_satis_input.setText("0.000")
-        self.doviz_satis_input.setAlignment(Qt.AlignCenter)
-        self.doviz_satis_input.setMaxLength(6) 
-        self.doviz_satis_input.setFixedHeight(40)
-        self.doviz_satis_input.mousePressEvent = self.set_active_input_doviz_satis
-        hbox1.addWidget(self.doviz_satis_input, alignment = Qt.AlignLeft)
-        
-        self.doviz_satis_kk_label = QLabel('SATIŞ K. KARTI')
-        self.doviz_satis_kk_label.setFixedHeight(40)
-        hbox1.addWidget(self.doviz_satis_kk_label, alignment = Qt.AlignRight)
-        self.doviz_satis_kk_input = QLineEdit(self)
-        self.doviz_satis_kk_input.setAlignment(Qt.AlignCenter)
-        self.doviz_satis_kk_input.setMaxLength(6) 
-        self.doviz_satis_kk_input.mousePressEvent = self.set_active_input_doviz_satis_kk
-        self.doviz_satis_kk_input.setFixedHeight(40)
-        hbox1.addWidget(self.doviz_satis_kk_input, alignment = Qt.AlignLeft)
-        
-        self.kaydet_button_doviz = QPushButton("KAYDET DOVIZ", self)
-        self.kaydet_button_doviz.setStyleSheet('QPushButton{'
-        'font-size: 20px;'
-        '}'
-        )
-        self.kaydet_button_doviz.setFixedHeight(40)
-        hbox1.addWidget(self.kaydet_button_doviz, alignment = Qt.AlignLeft)
-        self.kaydet_button_doviz.clicked.connect(self.carpan_kaydet_doviz)        
-        grid_layout.addLayout(hbox1, 1, 0, 1, 4)
-                
-        
-        #7. satır json data ekle
-        hbox3 = QHBoxLayout()
-        self.ekle_label = QLabel('Yeni Sarrafiye Cinsi')
+        self.ekle_label = QLabel('Sarrafiye Cinsi')
         self.ekle_label.setFixedHeight(40)
-        hbox3.addWidget(self.ekle_label, alignment = Qt.AlignLeft)
+        hbox_ekle.addWidget(self.ekle_label, alignment = Qt.AlignLeft)
         self.ekle_cins_input = QLineEdit(self)
         self.ekle_cins_input.mousePressEvent = self.set_active_input_ekle_cins
         self.ekle_cins_input.setFixedHeight(40)
-        hbox3.addWidget(self.ekle_cins_input, alignment = Qt.AlignLeft)
+        hbox_ekle.addWidget(self.ekle_cins_input, alignment = Qt.AlignLeft)
         
         self.ekle_alis_label = QLabel('ALIŞ')
-        hbox3.addWidget(self.ekle_alis_label, alignment = Qt.AlignRight)
+        hbox_ekle.addWidget(self.ekle_alis_label, alignment = Qt.AlignRight)
         self.ekle_alis_label.setFixedHeight(40)
         self.ekle_alis_input = QLineEdit(self)
         self.ekle_alis_input.setAlignment(Qt.AlignCenter)
         self.ekle_alis_input.setMaxLength(6) 
         self.ekle_alis_input.mousePressEvent = self.set_active_input_ekle_alis
         self.ekle_alis_input.setFixedHeight(40)
-        hbox3.addWidget(self.ekle_alis_input, alignment = Qt.AlignLeft)
+        hbox_ekle.addWidget(self.ekle_alis_input, alignment = Qt.AlignLeft)
         
         self.ekle_satis_label = QLabel('SATIŞ')
         self.ekle_satis_label.setFixedHeight(40)
-        hbox3.addWidget(self.ekle_satis_label, alignment = Qt.AlignRight)
+        hbox_ekle.addWidget(self.ekle_satis_label, alignment = Qt.AlignRight)
         self.ekle_satis_input = QLineEdit(self)
         self.ekle_satis_input.setAlignment(Qt.AlignCenter)
         self.ekle_satis_input.setMaxLength(6)
         self.ekle_satis_input.mousePressEvent = self.set_active_input_ekle_satis
         self.ekle_satis_input.setFixedHeight(40)
-        hbox3.addWidget(self.ekle_satis_input, alignment = Qt.AlignLeft)
+        hbox_ekle.addWidget(self.ekle_satis_input, alignment = Qt.AlignLeft)
         
         self.ekle_satis_kk_label = QLabel('SATIŞ K. KARTI')
         self.ekle_satis_kk_label.setFixedHeight(40)       
-        hbox3.addWidget(self.ekle_satis_kk_label, alignment = Qt.AlignRight)
+        hbox_ekle.addWidget(self.ekle_satis_kk_label, alignment = Qt.AlignRight)
         self.ekle_satis_kk_input = QLineEdit(self)
         self.ekle_satis_kk_input.setAlignment(Qt.AlignCenter)
         self.ekle_satis_kk_input.setMaxLength(6)
         self.ekle_satis_kk_input.mousePressEvent = self.set_active_input_ekle_satis_kk
         self.ekle_satis_kk_input.setFixedHeight(40)
-        hbox3.addWidget(self.ekle_satis_kk_input, alignment = Qt.AlignLeft)
+        hbox_ekle.addWidget(self.ekle_satis_kk_input, alignment = Qt.AlignLeft)
         
         self.ekle_combobox = QComboBox(self)
         self.ekle_combobox.setStyleSheet('QComboBox{'
@@ -874,28 +1070,49 @@ class Window2(QWidget):
         for i in range(0, len(default_factors2)+1):
             self.ekle_combobox.addItem(str(i))
         
-        self.ekle_combobox.currentIndexChanged.connect(self.update_carpan_input_doviz)
+        #self.ekle_combobox.currentIndexChanged.connect(self.update_carpan_input_doviz)
         self.ekle_combobox.setFixedHeight(40)
         self.ekle_combobox.setToolTip("Ekran yerleşim sırasını gösterir")
-        hbox3.addWidget(self.ekle_combobox, alignment = Qt.AlignLeft) #
+        hbox_ekle.addWidget(self.ekle_combobox, alignment = Qt.AlignLeft) #
         
         self.ekle_button = QPushButton("EKLE")
         self.ekle_button.clicked.connect(self.sarrafiye_ekle)
         self.ekle_button.setFixedHeight(40)        
-        hbox3.addWidget(self.ekle_button, alignment = Qt.AlignLeft)
+        hbox_ekle.addWidget(self.ekle_button, alignment = Qt.AlignLeft)
        
                 
         self.ekle_durum_label = QLabel('')
-        hbox3.addWidget(self.ekle_durum_label)
+        hbox_ekle.addWidget(self.ekle_durum_label)
         self.ekle_durum_label.setFixedHeight(40)       
+        group_ekle.setLayout(hbox_ekle)
+        grid_layout.addWidget(group_ekle,row , col, 1 , 3)
+        row +=1
+        #grid_layout.addLayout(hbox3, 2, 0, 1, 4)
         
-        grid_layout.addLayout(hbox3, 2, 0, 1, 4)
+        # Comboboxlar
+        group_sil = QGroupBox("Kayıtlı Sarrafiye Silme")
+        group_sil.setStyleSheet(
+            'QGroupBox::title {'
+            'color: Red;'  # Yazı rengi
+            'font-size: 20px;'  # Yazı boyutu
+            'subcontrol-origin: margin;'  # Başlık konumu
+            'subcontrol-position: top left;'  # Başlığı ortala
+            '}'
+            'QGroupBox {'
+            'color: black;'            
+            'background-color: lightslategrey;'  # Arka plan rengi
+            'font-size: 20px;'  # Yazı boyutu
+            '}'
+        )
+       
+        group_sil.setContentsMargins(10,20,10,10)        
+        hbox_sil = QHBoxLayout()
+        hbox_sil.setContentsMargins(10,20,10,10)
+        hbox_sil.setSpacing(15)
         
-        # 1. Satır: Comboboxlar
-        hbox4 = QHBoxLayout()
-        self.sil_label = QLabel('Silinecek Sarrafiye Cinsi')
+        self.sil_label = QLabel('Sarrafiye Cinsi')
         self.sil_label.setFixedHeight(40)
-        hbox4.addWidget(self.sil_label, alignment = Qt.AlignLeft)
+        hbox_sil.addWidget(self.sil_label, alignment = Qt.AlignLeft)
         self.sil_combobox = QComboBox(self)
         self.sil_combobox.setStyleSheet('QComboBox{'
         'font-size: 20px;'
@@ -908,92 +1125,385 @@ class Window2(QWidget):
         self.sil_combobox.setFixedHeight(40)      
         
         #self.sil_combobox.currentIndexChanged.connect(self.update_carpan_input_altin)
-        hbox4.addWidget(self.sil_combobox, alignment = Qt.AlignLeft) # 2 sütun genişliğinde
+        hbox_sil.addWidget(self.sil_combobox, alignment = Qt.AlignLeft) # 2 sütun genişliğinde
         
         
         self.sil_button = QPushButton("SİL")
         self.sil_button.clicked.connect(self.sarrafiye_sil)
         self.sil_button.setFixedHeight(40)        
-        hbox4.addWidget(self.sil_button, alignment = Qt.AlignLeft)
+        hbox_sil.addWidget(self.sil_button, alignment = Qt.AlignLeft)
         
         self.sil_durum_label = QLabel('')
-        hbox4.addWidget(self.sil_durum_label)
-        grid_layout.addLayout(hbox4, 3, 0, 1, 4)
+        hbox_sil.addWidget(self.sil_durum_label)
+        group_sil.setLayout(hbox_sil)
+        grid_layout.addWidget(group_sil,row , col, 1 , 1)
+        row +=1
+        #grid_layout.addLayout(hbox_sil, 3, 0, 1, 4)
         
-        # 8. satır WIFI bağlantısı
-        hbox5 = QHBoxLayout()
-        self.ssid_label = QLabel('WIFI Kullanıcı Adı:')
-        hbox5.addWidget(self.ssid_label)
-        self.ssid_input = QLineEdit(self)
-        self.ssid_input.mousePressEvent = self.set_active_input_ssid
-        hbox5.addWidget(self.ssid_input)
         
+        # Döviz Ayar Satırı
+        group_doviz = QGroupBox("Kayıtlı Döviz Güncelleme")
+        group_doviz.setStyleSheet(
+            'QGroupBox::title {'
+            'color: Red;'  # Yazı rengi
+            'font-size: 20px;'  # Yazı boyutu
+            'subcontrol-origin: margin;'  # Başlık konumu
+            'subcontrol-position: top left;'  # Başlığı ortala
+            '}'
+            'QGroupBox {'
+            'color: black;'            
+            'background-color: lightgrey;'  # Arka plan rengi
+            'font-size: 20px;'  # Yazı boyutu
+            '}'
+        )
+        group_doviz.setContentsMargins(10,20,10,10)        
+        hbox_doviz = QHBoxLayout()
+        hbox_doviz.setContentsMargins(10,20,10,10)
+        hbox_doviz.setSpacing(15)        
+        
+        self.doviz_label = QLabel('Döviz Cinsi           ')
+        self.doviz_label.setFixedHeight(40)
+        hbox_doviz.addWidget(self.doviz_label, alignment = Qt.AlignLeft)
+        self.doviz_turu_combobox = QComboBox(self)
+        self.doviz_turu_combobox.setStyleSheet('QComboBox{'
+        'font-size: 20px;'
+        '}'
+        )
+        
+        for key in default_factors1.keys():
+            self.doviz_turu_combobox.addItem(key)
+        
+        self.doviz_turu_combobox.currentIndexChanged.connect(self.update_carpan_input_doviz)
+        self.doviz_turu_combobox.setFixedHeight(40)
+        hbox_doviz.addWidget(self.doviz_turu_combobox, alignment = Qt.AlignLeft) # 2 sütun genişliğinde
+        
+        self.doviz_alis_label = QLabel('ALIŞ')
+        self.doviz_alis_label.setFixedHeight(40)
+        hbox_doviz.addWidget(self.doviz_alis_label, alignment = Qt.AlignRight)
+        self.doviz_alis_input = QLineEdit(self)
+        self.doviz_alis_input.setAlignment(Qt.AlignCenter)
+        self.doviz_alis_input.setMaxLength(6) 
+        self.doviz_alis_input.setFixedHeight(40)
+        self.doviz_alis_input.mousePressEvent = self.set_active_input_doviz_alis
+        hbox_doviz.addWidget(self.doviz_alis_input, alignment = Qt.AlignLeft)
+        
+        self.doviz_satis_label = QLabel('SATIŞ')
+        self.doviz_satis_label.setFixedHeight(40)
+        hbox_doviz.addWidget(self.doviz_satis_label, alignment = Qt.AlignRight)
+        self.doviz_satis_input = QLineEdit(self)
+        #self.sarrafiye_satis_input.setText("0.000")
+        self.doviz_satis_input.setAlignment(Qt.AlignCenter)
+        self.doviz_satis_input.setMaxLength(6) 
+        self.doviz_satis_input.setFixedHeight(40)
+        self.doviz_satis_input.mousePressEvent = self.set_active_input_doviz_satis
+        hbox_doviz.addWidget(self.doviz_satis_input, alignment = Qt.AlignLeft)
+        
+        self.doviz_satis_kk_label = QLabel('SATIŞ K. KARTI')
+        self.doviz_satis_kk_label.setFixedHeight(40)
+        hbox_doviz.addWidget(self.doviz_satis_kk_label, alignment = Qt.AlignRight)
+        self.doviz_satis_kk_input = QLineEdit(self)
+        self.doviz_satis_kk_input.setAlignment(Qt.AlignCenter)
+        self.doviz_satis_kk_input.setMaxLength(6) 
+        self.doviz_satis_kk_input.mousePressEvent = self.set_active_input_doviz_satis_kk
+        self.doviz_satis_kk_input.setFixedHeight(40)
+        hbox_doviz.addWidget(self.doviz_satis_kk_input, alignment = Qt.AlignLeft)
+        
+        self.kaydet_button_doviz = QPushButton("KAYDET DOVIZ", self)
+        self.kaydet_button_doviz.setStyleSheet('QPushButton{'
+        'font-size: 20px;'
+        '}'
+        )
+        self.kaydet_button_doviz.setFixedHeight(40)
+        hbox_doviz.addWidget(self.kaydet_button_doviz, alignment = Qt.AlignLeft)
+        self.kaydet_button_doviz.clicked.connect(self.carpan_kaydet_doviz)        
+        group_doviz.setLayout(hbox_doviz)
+        grid_layout.addWidget(group_doviz,row , col, 1 , 3)
+        row +=1
+    
+        # WIFI bağlantısı
+        group_WIFI = QGroupBox("WIFI Ayarları")
+        group_WIFI.setStyleSheet(
+            'QGroupBox::title {'
+            'color: Red;'  # Yazı rengi
+            'font-size: 20px;'  # Yazı boyutu
+            'subcontrol-origin: margin;'  # Başlık konumu
+            'subcontrol-position: top left;'  # Başlığı ortala
+            '}'
+            'QGroupBox {'
+            'color: black;'            
+            'background-color: lightslategrey;'  # Arka plan rengi
+            'font-size: 20px;'  # Yazı boyutu
+            '}'
+        )
+        group_WIFI.setContentsMargins(10,20,10,10)        
+        hbox_WIFI = QHBoxLayout()
+        hbox_WIFI.setContentsMargins(10,20,10,10)
+        hbox_WIFI.setSpacing(15)        
+        self.scan_button = QPushButton("Wifi Ağlarını tara", self)
+        self.scan_button.clicked.connect(self.scan_wifi_networks)
+        hbox_WIFI.addWidget(self.scan_button)
+        #grid_layout.addLayout(hbox_WIFI, row, 0, 1, 2)
+        #row +=1
+        
+        #hbox_wifi_list = QHBoxLayout()
+        self.combo =QComboBox(self)
+        hbox_WIFI.addWidget(self.combo)
+        #grid_layout.addLayout(hbox_wifi_list, row, 0, 1, 2)
+        #row +=1
+        
+        #hbox_pass = QHBoxLayout()
         self.password_label = QLabel('WIFI Şifresi:')
-        hbox5.addWidget(self.password_label)
+        hbox_WIFI.addWidget(self.password_label)
+        #grid_layout.addLayout(hbox_pass, row, 0, 1, 2)
+        #row +=1
+        
+        #hbox_pass_in = QHBoxLayout()
         self.password_input = QLineEdit(self)
-        self.password_input.setEchoMode(QLineEdit.Password)
-        self.password_input.mousePressEvent = self.set_active_input_password        
-        hbox5.addWidget(self.password_input)
-
-        self.show_password_checkbox = QCheckBox('Şifreyi Göster')
-        self.show_password_checkbox.stateChanged.connect(self.toggle_password_visibility)
-        hbox5.addWidget(self.show_password_checkbox)
+        self.password_input.mousePressEvent = self.set_active_input_password
+        hbox_WIFI.addWidget(self.password_input)
+        #grid_layout.addLayout(hbox_pass_in, row, 0, 1, 2)
+        #row +=1
         
-        self.connect_button = QPushButton('Bağlan',self)
+        #hbox_connect = QHBoxLayout()
+        self.connect_button = QPushButton("Seçili Wifi ağına bağlan",self)
         self.connect_button.clicked.connect(self.connect_to_wifi)
-        hbox5.addWidget(self.connect_button)
-        
+        hbox_WIFI.addWidget(self.connect_button)        
         self.status_label = QLabel('')
-        hbox5.addWidget(self.status_label)
-        
-        grid_layout.addLayout(hbox5, 4, 0, 1, 2)
+        hbox_WIFI.addWidget(self.status_label)
+        group_WIFI.setLayout(hbox_WIFI)
+        grid_layout.addWidget(group_WIFI, row, 0, 1, 3)
+        row +=1
         
         ######################################################
-        hbox6 = QHBoxLayout()
-        
+        group_yazi = QGroupBox("Tablo Yazı Ayarları")
+        group_yazi.setStyleSheet(
+            'QGroupBox::title {'
+            'color: Red;'  # Yazı rengi
+            'font-size: 20px;'  # Yazı boyutu
+            'subcontrol-origin: margin;'  # Başlık konumu
+            'subcontrol-position: top left;'  # Başlığı ortala
+            '}'
+            'QGroupBox {'
+            'color: black;'            
+            'background-color: lightgrey;'  # Arka plan rengi
+            'font-size: 20px;'  # Yazı boyutu
+            '}'
+        )
+        group_yazi.setContentsMargins(10,20,10,10)        
+        hbox_yazi = QHBoxLayout()
+        hbox_yazi.setContentsMargins(10,20,10,10)
+        hbox_yazi.setSpacing(15)        
+               
         self.yazi_renk_button = QPushButton("Yazı Rengi")
         self.yazi_renk_button.clicked.connect(self.change_color)
-        hbox6.addWidget(self.yazi_renk_button)
+        hbox_yazi.addWidget(self.yazi_renk_button)
 
         self.arka_fon1_button = QPushButton("Arka Fon Rengi-1")
         self.arka_fon1_button.clicked.connect(self.change_bckground1)
-        hbox6.addWidget(self.arka_fon1_button)
+        hbox_yazi.addWidget(self.arka_fon1_button)
         
         self.arka_fon2_button = QPushButton("Arka Fon Rengi-2")
         self.arka_fon2_button.clicked.connect(self.change_bckground2)
-        hbox6.addWidget(self.arka_fon2_button)
+        hbox_yazi.addWidget(self.arka_fon2_button)
 
         self.yazi_renk_label = QLabel('')
-        hbox6.addWidget(self.yazi_renk_label, alignment = Qt.AlignLeft)
-        grid_layout.addLayout(hbox6, 5, 0, 1, 2)
+        hbox_yazi.addWidget(self.yazi_renk_label, alignment = Qt.AlignLeft)
+        group_yazi.setLayout(hbox_yazi)
+        grid_layout.addWidget(group_yazi,row , col, 1 , 2)
+        row +=1
         ##############################################################
+        group_logo = QGroupBox("Logo Yazı Ayarları")
+        group_logo.setStyleSheet(
+            'QGroupBox::title {'
+            'color: Red;'  # Yazı rengi
+            'font-size: 20px;'  # Yazı boyutu
+            'subcontrol-origin: margin;'  # Başlık konumu
+            'subcontrol-position: top left;'  # Başlığı ortala
+            '}'
+            'QGroupBox {'
+            'color: black;'            
+            'background-color: lightslategrey;'  # Arka plan rengi
+            'font-size: 20px;'  # Yazı boyutu
+            '}'
+        )
+        group_logo.setContentsMargins(10,20,10,10)        
+        hbox_logo = QHBoxLayout()
+        hbox_logo.setContentsMargins(10,20,10,10)
+        hbox_logo.setSpacing(15)        
+        self.toggle_btn = QPushButton("RESİM LOGO", self)
+        self.toggle_btn.setCheckable(True)
+        self.toggle_btn.clicked.connect(self.logo_sec)
+        hbox_logo.addWidget(self.toggle_btn, alignment = Qt.AlignLeft)
+        
+        self.logo_label_in = QLabel("Logo Metni ")
+        hbox_logo.addWidget(self.logo_label_in, alignment = Qt.AlignLeft)
+        
+        self.logo_input = QTextEdit(default_factors_renk["logo_content"])
+        self.logo_input.mousePressEvent = self.set_active_input_logo
+        ################################
+        text_font = default_factors_renk["logo_font"]        
+        text_fontsize = (int(default_factors_renk["logo_fontsize"]))
+        #self.font = font_y
+        text_backgrnd = default_factors_renk["logo_arka_fon"]["HEX"]
+        text_color = default_factors_renk['logo_yazi_renk']["HEX"]
+        text_bold = default_factors_renk["logo_fontweight"]
+        text_italic = default_factors_renk["logo_fontitalic"]        
+        if text_italic == True:
+            text_italic = "italic"
+        else:
+            text_italic = ""
+        
+        text_alignment = default_factors_renk["logo_alignment"]            
+        if text_alignment == 1:
+            self.logo_input.setAlignment(Qt.AlignLeft)
+        elif text_alignment == 2:
+            self.logo_input.setAlignment(Qt.AlignRight)
+        elif text_alignment == 8:
+            self.logo_input.setAlignment(Qt.AlignJustify)    
+        #font-size: {text_fontsize}px;
+        self.logo_input.setStyleSheet(f"font: {text_font}; background-color:{text_backgrnd};color:{text_color};font-weight: {text_bold};font-style: {text_italic};")#setFont(font_y)
+        #################################
+        hbox_logo.addWidget(self.logo_input)
+        
+        self.yazi_renk_button = QPushButton("Yazı Rengi")
+        self.yazi_renk_button.clicked.connect(self.change_color_logo)
+        hbox_logo.addWidget(self.yazi_renk_button)
 
+        self.logo_arka_fon_button = QPushButton("Logo Arka Fon Rengi")
+        self.logo_arka_fon_button.clicked.connect(self.change_bckground_logo)
+        hbox_logo.addWidget(self.logo_arka_fon_button)
+        
+        self.logo_font_combobox = QComboBox(self)
+        self.logo_font_combobox.setStyleSheet('QComboBox{'
+        'font-size: 20px;'
+        '}'
+        )
+        self.logo_font_combobox.addItem("Arial")
+        self.logo_font_combobox.addItem("Times")
+        self.logo_font_combobox.addItem("Courier")
+        self.logo_font_combobox.addItem("Verdana")
+        self.logo_font_combobox.addItem("Comic")
+        self.logo_font_combobox.addItem("Helvetica")
+        self.logo_font_combobox.addItem("Georgia")
+        self.logo_font_combobox.addItem("Tahoma")
+        self.logo_font_combobox.addItem("Trebuchet")
+
+
+        self.logo_font_combobox.currentIndexChanged.connect(self.update_logo_font)
+        self.logo_font_combobox.setFixedHeight(40)
+        hbox_logo.addWidget(self.logo_font_combobox, alignment = Qt.AlignLeft) 
+        
+        self.logo_fontsize_combobox = QComboBox(self)
+        self.logo_fontsize_combobox.setStyleSheet('QComboBox{'
+        'font-size: 20px;'
+        '}'
+        )
+        self.logo_fontsize_combobox.addItem("40")
+        self.logo_fontsize_combobox.addItem("48")
+        self.logo_fontsize_combobox.addItem("56")
+        self.logo_fontsize_combobox.addItem("62")
+        self.logo_fontsize_combobox.addItem("70")
+        self.logo_fontsize_combobox.addItem("76")
+        self.logo_fontsize_combobox.addItem("84")       
+        self.logo_fontsize_combobox.addItem("92") 
+
+        self.logo_fontsize_combobox.currentIndexChanged.connect(self.update_logo_fontsize)
+        self.logo_fontsize_combobox.setFixedHeight(40)
+        hbox_logo.addWidget(self.logo_fontsize_combobox, alignment = Qt.AlignLeft)
+               
+        self.logo_yazi_renk_label = QLabel('')
+        hbox_logo.addWidget(self.logo_yazi_renk_label, alignment = Qt.AlignLeft)
+        group_logo.setLayout(hbox_logo)
+        
+        self.logo_app_button = QPushButton('Uygula')
+        self.logo_app_button.clicked.connect(self.logo_app) 
+        hbox_logo.addWidget(self.logo_app_button, alignment = Qt.AlignLeft)
+        group_logo.setLayout(hbox_logo)
+        grid_layout.addWidget(group_logo,row , 0, 3 , 3)
+        row +=3
 
 
         #Keyboard Layout
         keyboard_layout = QHBoxLayout()
         #Butonlar
-        self.add_keyboard_row(['1','2','3','4','5','6','7','8','9','0',], grid_layout, 6, 0, 1, 2)
-        self.add_keyboard_row(['Q','W','E','R','T','Y','U','I','O','P','Ğ','Ü','~'], grid_layout, 7, 0, 1, 2)
-        self.add_keyboard_row(['A','S','D','F','G','H','J','K','L','Ş','İ',',',';'], grid_layout, 8, 0, 1, 2)
-        self.add_keyboard_row(['Z','X','C','V','B','N','M','Ö','Ç','.',':'], grid_layout, 9, 0, 1, 2)
-        self.add_keyboard_row(['"','é','!','#','^','$','%','/','*','-','+','_'], grid_layout, 10, 0, 1, 2)
+        self.add_keyboard_row(['1','2','3','4','5','6','7','8','9','0',], grid_layout, row, 0, 1, 2)
+        row +=1
+        self.add_keyboard_row(['Q','W','E','R','T','Y','U','I','O','P','Ğ','Ü','~'], grid_layout, row, 0, 1, 2)
+        row +=1
+        self.add_keyboard_row(['A','S','D','F','G','H','J','K','L','Ş','İ',',',';'], grid_layout, row, 0, 1, 2)
+        row +=1
+        self.add_keyboard_row(['Z','X','C','V','B','N','M','Ö','Ç','.',':'], grid_layout, row, 0, 1, 2)
+        row +=1
+        self.add_keyboard_row(['"','é','!','#','^','$','%','/','*','-','+','_'], grid_layout, row, 0, 1, 2)
+        row +=1
         #Delete Button
-        delete_button =QPushButton('Delete',self)
+        delete_button = QPushButton('Delete',self)
         delete_button.clicked.connect(self.delete_char)
         keyboard_layout.addWidget(delete_button)
         #Space Button
-        space_button =QPushButton('Space',self)
+        space_button = QPushButton('Space',self)
         space_button.clicked.connect(self.space_char)
         keyboard_layout.addWidget(space_button)
         #Caps Lock Button
-        capslock_button =QPushButton('CapsLock',self)
+        capslock_button = QPushButton('CapsLock',self)
         capslock_button.clicked.connect(self.toggle_caps_lock)
         keyboard_layout.addWidget(capslock_button)
-        grid_layout.addLayout(keyboard_layout, 11, 0, 1, 2)
+        #ENTER Button
+        enter_button = QPushButton('ENTER',self)
+        enter_button.clicked.connect(self.enter)
+        keyboard_layout.addWidget(enter_button)
+        #SOL Button
+        SOL_button = QPushButton('SOL',self)
+        SOL_button.clicked.connect(self.sol_hizala)
+        keyboard_layout.addWidget(SOL_button)
+        #SAG Button
+        SAG_button = QPushButton('SAG',self)
+        SAG_button.clicked.connect(self.sag_hizala)
+        keyboard_layout.addWidget(SAG_button)
+        #ORTALA Button
+        enter_button = QPushButton('ORTALA',self)
+        enter_button.clicked.connect(self.ortala_hizala)
+        keyboard_layout.addWidget(enter_button)
+        #KOYU Button
+        KOYU_button = QPushButton('KOYU',self)
+        KOYU_button.clicked.connect(self.koyu_renk)
+        keyboard_layout.addWidget(KOYU_button)
+        #ITALIC Button
+        ITALIC_button = QPushButton('ITALIC',self)
+        ITALIC_button.clicked.connect(self.italic_yazi)
+        keyboard_layout.addWidget(ITALIC_button)
+        
+        UP_button = QPushButton('↑',self)
+        UP_button.clicked.connect(self.up_direction)
+        keyboard_layout.addWidget(UP_button)
+        
+        DOWN_button = QPushButton('↓',self)
+        DOWN_button.clicked.connect(self.down_direction)
+        keyboard_layout.addWidget(DOWN_button)
+                
+        LEFT_button = QPushButton('←',self)
+        LEFT_button.clicked.connect(self.left_direction)
+        keyboard_layout.addWidget(LEFT_button)
+                
+        RIGHT_button = QPushButton('→',self)
+        RIGHT_button.clicked.connect(self.right_direction)
+        keyboard_layout.addWidget(RIGHT_button)
+        
+        grid_layout.addLayout(keyboard_layout, row, 0, 1, 2)
+        row +=1
         self.setLayout(grid_layout)
+        self.active_input = self.logo_input  
         self.show()
-
+        
+    def logo_sec(self):
+        global logo_flag
+        if self.toggle_btn.isChecked():
+            self.toggle_btn.setText("YAZI LOGO")
+            logo_flag = 0
+        else:
+            self.toggle_btn.setText("RESİM LOGO")
+            logo_flag = 1
+        
     def change_color(self):
         global yazi_renk, default_factors_renk, address
         color = QColorDialog.getColor()
@@ -1003,10 +1513,21 @@ class Window2(QWidget):
             with open(address +'default_factors_renk.json', 'w', encoding = 'utf-8') as json_file:
                 json.dump(default_factors_renk, json_file, ensure_ascii = False, indent = 4)
             
-            print('Seçilen renk:', yazi_renk)
+            #print('Seçilen renk:', yazi_renk)
             self.yazi_renk_label.setText(str(color.name()+" rengini yazı rengi olarak seçtiniz"))
         # Change the text color of the label
         #self.label.setStyleSheet(f"color: {selected_color}; font-size: 18px;")
+    
+    def change_color_logo(self):
+        global default_factors_renk
+        color = QColorDialog.getColor()
+        if color.isValid():
+            logo_yazi_renk = color.name()
+            #self.logo_input.setTextColor(color)
+            default_factors_renk['logo_yazi_renk']['HEX'] = logo_yazi_renk
+            with open(address +'default_factors_renk.json', 'w', encoding = 'utf-8') as json_file:
+                json.dump(default_factors_renk, json_file, ensure_ascii = False, indent = 4)          
+            
     
     def change_bckground1(self):
         global arka_fon1, default_factors_renk, address
@@ -1017,7 +1538,7 @@ class Window2(QWidget):
             with open(address +'default_factors_renk.json', 'w', encoding = 'utf-8') as json_file:
                 json.dump(default_factors_renk, json_file, ensure_ascii = False, indent = 4)
             
-            print('Seçilen renk:', arka_fon1)
+            #print('Seçilen renk:', arka_fon1)
             self.yazi_renk_label.setText(str(color.name()+" rengini yazı rengi olarak seçtiniz"))
         # Change the text color of the label
         #self.label.setStyleSheet(f"color: {selected_color}; font-size: 18px;")
@@ -1031,10 +1552,52 @@ class Window2(QWidget):
             with open(address +'default_factors_renk.json', 'w', encoding = 'utf-8') as json_file:
                 json.dump(default_factors_renk, json_file, ensure_ascii = False, indent = 4)
             
-            print('Seçilen renk:', arka_fon2)
+            #print('Seçilen renk:', arka_fon2)
             self.yazi_renk_label.setText(str(color.name()+" rengini yazı rengi olarak seçtiniz"))
         # Change the text color of the label
     
+    def change_bckground_logo(self):
+        global logo_arka_fon, default_factors_renk, address
+        color = QColorDialog.getColor()
+        if color.isValid():
+            logo_arka_fon = color.name()
+            #self.logo_input.setTextBackgroundColor(logo_arka_fon)
+            default_factors_renk['logo_arka_fon']['HEX'] = logo_arka_fon
+            with open(address +'default_factors_renk.json', 'w', encoding = 'utf-8') as json_file:
+                json.dump(default_factors_renk, json_file, ensure_ascii = False, indent = 4)
+            
+            #print('Seçilen renk:', arka_fon1)
+            self.logo_yazi_renk_label.setText(str(color.name()+" rengini yazı rengi olarak seçtiniz"))
+        # Change the text color of the label
+        #self.label.setStyleSheet(f"color: {selected_color}; font-size: 18px;")
+    
+    def update_logo_font(self):
+        global default_factors_renk
+        font = self.logo_font_combobox.currentText()
+        #self.logo_label.setFont(self.font)
+        default_factors_renk["logo_font"] = font
+        with open(address +'default_factors_renk.json', 'w', encoding = 'utf-8') as json_file:
+                json.dump(default_factors_renk, json_file, ensure_ascii = False, indent = 4)
+    
+    def update_logo_fontsize(self):
+        global default_factors_renk
+        fontsize = self.logo_fontsize_combobox.currentText()
+        #self.font.setPointSize(self.fontsize) 
+        #self.logo_label.setFont(self.font)
+        print(fontsize)
+        default_factors_renk["logo_fontsize"] = fontsize
+        with open(address +'default_factors_renk.json', 'w', encoding = 'utf-8') as json_file:
+                json.dump(default_factors_renk, json_file, ensure_ascii = False, indent = 4)
+                
+    def logo_app(self):
+        global default_factors_renk
+        text = self.logo_input.toPlainText()
+        #self.logo_label.setText(text)
+        font = self.active_input.font()        
+        default_factors_renk["logo_content"] = text
+        with open(address +'default_factors_renk.json', 'w', encoding = 'utf-8') as json_file:
+                json.dump(default_factors_renk, json_file, ensure_ascii = False, indent = 4)
+                
     def set_active_input_sarrafiye_alis(self, event):
         self.active_input = self.sarrafiye_alis_input
         self.active_input.setToolTip("Alış Milyem katsayısını girin")
@@ -1078,7 +1641,10 @@ class Window2(QWidget):
         self.active_input = self.ssid_input
     
     def set_active_input_password(self, event):
-        self.active_input =self.password_input    
+        self.active_input =self.password_input
+        
+    def set_active_input_logo(self, event):
+        self.active_input =self.logo_input       
     
     def add_keyboard_row(self,keys,layout, i, j , k, l):
         row_layout = QHBoxLayout()
@@ -1101,14 +1667,24 @@ class Window2(QWidget):
             msg.setText('Milyem değeri giriş kutusuna sadece rakam girebilirsiniz')
             msg.exec_()                
         else:
-            self.active_input.insert(sender.text())    
+            if self.active_input == self.logo_input:
+                self.active_input.insertPlainText(sender.text())
+            else:
+                self.active_input.insert(sender.text())
+                
     def delete_char(self):
-        current_text = self.active_input.text()
-        self.active_input.setText(current_text[:-1])
+        if self.active_input == self.logo_input:
+            current_text = self.active_input.toPlainText()
+            self.active_input.setText(current_text[:-1])
+        else:            
+            current_text = self.active_input.text()
+            self.active_input.setText(current_text[:-1])
       
     def space_char(self):
-        current_text = self.active_input.text()
-        self.active_input.insert(' ')
+        if self.active_input == self.logo_input:
+            self.active_input.insertPlainText(' ')
+        else:                
+            self.active_input.insert(' ')
     
     def toggle_caps_lock(self):
         self.caps_lock_flag = not self.caps_lock_flag
@@ -1121,6 +1697,88 @@ class Window2(QWidget):
                     button.setText(button.text().upper())
                 else:
                     button.setText(button.text().lower())
+    
+    def enter(self):        
+        if self.active_input == self.logo_input:
+            self.active_input.insertPlainText('\n')
+        #else:
+        #    self.active_input.insert('\n')
+        
+    def koyu_renk(self):
+        global default_factors_renk
+        current_font = self.active_input.font()
+        if self.active_input == self.logo_input:            
+            if current_font.weight() == QFont.Bold:
+                current_font.setWeight(QFont.Normal)
+            else:
+                current_font.setWeight(QFont.Bold)
+            default_factors_renk["logo_fontweight"] = current_font.weight()
+            with open(address +'default_factors_renk.json', 'w', encoding = 'utf-8') as json_file:
+                json.dump(default_factors_renk, json_file, ensure_ascii = False, indent = 4)    
+        else:
+            if current_font.weight() == QFont.Bold:
+                current_font.setWeight(QFont.Normal)                
+            else:
+                current_font.setWeight(QFont.Bold)
+        #self.active_input.font() = current_font
+        self.active_input.setFont(current_font)
+        
+    def italic_yazi(self):        
+        global default_factors_renk
+        current_font = self.active_input.font()
+        current_font.setItalic(not current_font.italic())
+        if self.active_input == self.logo_input:            
+            default_factors_renk["logo_fontitalic"] = current_font.italic()
+            self.active_input.setFont(current_font)
+            with open(address +'default_factors_renk.json', 'w', encoding = 'utf-8') as json_file:
+                json.dump(default_factors_renk, json_file, ensure_ascii = False, indent = 4)    
+        else:
+            self.active_input.setFont(current_font)
+        
+    
+    def sol_hizala(self):
+        global default_factors_renk
+        if self.active_input == self.logo_input:            
+            default_factors_renk["logo_alignment"] = 1
+            with open(address +'default_factors_renk.json', 'w', encoding = 'utf-8') as json_file:
+                json.dump(default_factors_renk, json_file, ensure_ascii = False, indent = 4)  
+        self.active_input.setAlignment(Qt.AlignLeft)
+    
+    def sag_hizala(self):
+        global default_factors_renk
+        if self.active_input == self.logo_input:            
+            default_factors_renk["logo_alignment"] = 2
+            with open(address +'default_factors_renk.json', 'w', encoding = 'utf-8') as json_file:
+                json.dump(default_factors_renk, json_file, ensure_ascii = False, indent = 4)
+        self.active_input.setAlignment(Qt.AlignRight)
+    
+    def ortala_hizala(self):
+        global default_factors_renk
+        if self.active_input == self.logo_input:            
+            default_factors_renk["logo_alignment"] = 8
+            with open(address +'default_factors_renk.json', 'w', encoding = 'utf-8') as json_file:
+                json.dump(default_factors_renk, json_file, ensure_ascii = False, indent = 4)
+        self.active_input.setAlignment(Qt.AlignCenter)
+    
+    def up_direction(self):
+        cursor =self.logo_input.textCursor()
+        cursor.movePosition(cursor.Up)
+        self.logo_input.setTextCursor(cursor)
+     
+    def down_direction(self):
+        cursor =self.logo_input.textCursor()
+        cursor.movePosition(cursor.Down)
+        self.logo_input.setTextCursor(cursor)
+    
+    def left_direction(self):
+        cursor =self.logo_input.textCursor()
+        cursor.movePosition(cursor.Left)
+        self.logo_input.setTextCursor(cursor)
+    
+    def right_direction(self):
+        cursor =self.logo_input.textCursor()
+        cursor.movePosition(cursor.Right)
+        self.logo_input.setTextCursor(cursor)
         
     def sarrafiye_ekle(self):
         global default_factors2, address
@@ -1178,8 +1836,19 @@ class Window2(QWidget):
         else:
             self.password_input.setEchoMode(QLineEdit.Password)
             
+    def scan_wifi_networks(self):
+        try:
+            output = subprocess.run(["nmcli","-f","SSID","device","wifi","list"], capture_output=True,text=True)
+            networks = output.stdout.strip().split('\n')[1:]
+            self.combo.clear()
+            self.combo.addItems(networks)
+            QMessageBox.information(self,'Bağlantı Durumu','Bağlantı var')
+        except Exception as e:
+            QMessageBox.critical(self,"Hata ",str(e))
+            
     def connect_to_wifi(self):
-        ssid = self.ssid_input.text()
+        '''
+ssid = self.ssid_input.text()
         password =self.password_input.text()
         
         try:
@@ -1188,7 +1857,21 @@ class Window2(QWidget):
             self.status_label.setText(f'{ssid} ağına bağlanıldı')
         except subprocess.CalledProcessError:
             self.status_label.setText('Bağlantı başarısız!')
-      
+'''
+        ssid =self.combo.currentText()
+        ssid =ssid.rstrip()
+        if ssid:
+            #self.ssid_input.mousePressEvent = self.set_active_input_ssid
+            password = self.active_input.text()#self,"Şifre Girin",f'{selected_network} ağı için şifre girin')
+            #if ok:
+            try:
+               subprocess.run(["nmcli","device","wifi","connect",ssid, "password",password],check=True)
+               QMessageBox.information(self,'Bağlantı Durumu',f'{ssid} ağına başarıyla bağlandı')
+            except subprocess.CalledProcessError:
+               QMessageBox.warning(self,"Bağlantı Durumu","Bağlantı başarısız")
+        else:
+            QMessageBox.warning(self,"Ağ seçilmedi","Lütfen bir ağ seçin")
+            
     def update_carpan_input_altin(self):
         global default_factors2
 
@@ -1297,27 +1980,27 @@ class Window2(QWidget):
                 json.dump(default_factors1, json_file, ensure_ascii = False, indent=4)
             
     
-    def anasayfa(self):         
+    def anasayfa(self):
+        global ilk
         for window in QApplication.topLevelWidgets():
             window.close()
         self.close()
         self.window = MainWindow()
         self.window.show()
+        ilk = 0
   
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    try:
-        subprocess.check_output(["ping","-c","1","google.com"])
-        print('Bağlantı var')
-        #Asyncio döngüsünü başlat
-        has_altin, doviz_data = asyncio.run(connect_and_listen())#asyncio.get_event_loop().run_until_complete(connect_and_listen())
-        HAS_GUN = has_altin[2]
-        window = MainWindow()
-    except subprocess.CalledProcessError:
-        print("Bağlantı yok")
-        window = WifiManager()
-    window.show()
-    sys.exit(app.exec_())
-    
-
-
+    if kayitli_MAC_address == mac_address:
+        try:            
+            window = MainWindow()
+        except subprocess.CalledProcessError:            
+            window = WifiManager()
+        window.show()
+        sys.exit(app.exec_())#app.exec_()#
+    else:
+        msg_box = QMessageBox()
+        msg_box.setWindowTitle("MAC Uyumsuzluğu")
+        msg_box.setText("Girilen MAC adresi bu cihaza ait değil")
+        msg_box.setIcon(QMessageBox.Information)
+        msg_box.exec_()
