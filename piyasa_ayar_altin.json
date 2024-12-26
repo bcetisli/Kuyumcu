@@ -1,9 +1,4 @@
 {
-    "ff": {
-        "AlisY": 1.0,
-        "SatisY": 2.0,
-        "K_Karti": 3.0
-    },
     "ÇEYREK": {
         "AlisY": 1.62,
         "SatisY": 1.64,
@@ -48,5 +43,10 @@
         "AlisY": 1.0,
         "SatisY": 1.0,
         "K_Karti": 0.0
+    },
+    "gg": {
+        "AlisY": 1.0,
+        "SatisY": 2.0,
+        "K_Karti": 3.0
     }
 }
