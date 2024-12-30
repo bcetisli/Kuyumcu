@@ -8,11 +8,11 @@
             "AlisY": -0.1,
             "SatisY": 0.1
         },
-        "GBP": {
+        "CHF": {
             "AlisY": -0.05,
             "SatisY": 0.05
         },
-        "CHF": {
+        "GBP": {
             "AlisY": -0.05,
             "SatisY": 0.05
         }
