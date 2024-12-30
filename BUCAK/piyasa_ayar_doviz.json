@@ -1,10 +1,5 @@
-
 {
     "doviz": {
-        "SAR": {
-            "AlisY": -1.0,
-            "SatisY": 1.0
-        },
         "USD": {
             "AlisY": -0.05,
             "SatisY": 0.05
@@ -14,12 +9,12 @@
             "SatisY": 0.1
         },
         "GBP": {
-            "AlisY": -0.5,
-            "SatisY": 0.5
+            "AlisY": -0.05,
+            "SatisY": 0.05
         },
         "CHF": {
             "AlisY": -0.05,
-            "SatisY": 0.08
+            "SatisY": 0.05
         }
     },
     "tercih": {
@@ -27,4 +22,3 @@
         "ikinci_tercih": "ALTINKAYNAK"
     }
 }
-
