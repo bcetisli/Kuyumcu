@@ -15,10 +15,6 @@
         "EUR": {
             "AlisY": -0.1,
             "SatisY": 0.1
-        },
-        "SAR": {
-            "AlisY": -0.1,
-            "SatisY": 0.1
         }
     },
     "tercih": {
