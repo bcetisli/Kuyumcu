@@ -1,9 +1,5 @@
 {
     "doviz": {
-        "SAR": {
-            "AlisY": -0.05,
-            "SatisY": 0.05
-        },
         "USD": {
             "AlisY": -0.05,
             "SatisY": 0.05
@@ -11,6 +7,10 @@
         "EUR": {
             "AlisY": -0.1,
             "SatisY": 0.1
+        },
+        "CAD": {
+            "AlisY": -0.05,
+            "SatisY": 0.05
         }
     },
     "tercih": {
