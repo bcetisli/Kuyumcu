@@ -1,9 +1,5 @@
 {
     "doviz": {
-        "GBP": {
-            "AlisY": -0.05,
-            "SatisY": 0.05
-        },
         "USD": {
             "AlisY": -0.05,
             "SatisY": 0.05
@@ -12,7 +8,7 @@
             "AlisY": -0.1,
             "SatisY": 0.1
         },
-        "CHF": {
+        "GBP": {
             "AlisY": -0.05,
             "SatisY": 0.05
         }
