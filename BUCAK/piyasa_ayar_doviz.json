@@ -1,18 +1,18 @@
 {
     "doviz": {
-        "CAD": {
-            "AlisY": -0.1,
-            "SatisY": 0.1
-        },
-        "RUB": {
-            "AlisY": -0.1,
-            "SatisY": 0.1
-        },
         "USD": {
             "AlisY": -0.05,
             "SatisY": 0.05
         },
         "EUR": {
+            "AlisY": -0.1,
+            "SatisY": 0.1
+        },
+        "SAR": {
+            "AlisY": -0.01,
+            "SatisY": 0.01
+        },
+        "CAD": {
             "AlisY": -0.1,
             "SatisY": 0.1
         }
