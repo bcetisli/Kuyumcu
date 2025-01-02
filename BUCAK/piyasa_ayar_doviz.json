@@ -11,14 +11,6 @@
         "EUR": {
             "AlisY": -0.1,
             "SatisY": 0.1
-        },
-        "SAR": {
-            "AlisY": -0.01,
-            "SatisY": 0.01
-        },
-        "RUB": {
-            "AlisY": -0.1,
-            "SatisY": 0.1
         }
     },
     "tercih": {
