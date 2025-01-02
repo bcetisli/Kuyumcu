@@ -34,14 +34,14 @@
         "SatisY": 0.93,
         "K_Karti": 1.05
     },
-    "ONS": {
-        "AlisY": 1.0,
-        "SatisY": 1.0,
-        "K_Karti": 0.0
-    },
     "HAS": {
         "AlisY": 1.0,
         "SatisY": 1.0,
         "K_Karti": 1.0
+    },
+    "ONS": {
+        "AlisY": 1.0,
+        "SatisY": 1.0,
+        "K_Karti": 0.0
     }
 }
