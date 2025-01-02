@@ -4,13 +4,13 @@
             "AlisY": -0.05,
             "SatisY": 0.05
         },
-        "GBP": {
-            "AlisY": -0.1,
-            "SatisY": 0.1
-        },
         "EUR": {
-            "AlisY": -0.1,
-            "SatisY": 0.1
+            "AlisY": -0.05,
+            "SatisY": 0.05
+        },
+        "GBP": {
+            "AlisY": -0.05,
+            "SatisY": 0.05
         }
     },
     "tercih": {
