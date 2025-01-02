@@ -1,12 +1,12 @@
 {
-    "TAM": {
-        "AlisY": 6.4,
-        "SatisY": 6.54,
-        "K_Karti": 1.05
-    },
     "ÇEYREK": {
         "AlisY": 1.62,
         "SatisY": 1.64,
+        "K_Karti": 1.05
+    },
+    "TAM": {
+        "AlisY": 6.4,
+        "SatisY": 6.54,
         "K_Karti": 1.05
     },
     "YARIM": {
