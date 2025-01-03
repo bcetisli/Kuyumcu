@@ -5,20 +5,16 @@
             "SatisY": 0.05
         },
         "EUR": {
-            "AlisY": -0.1,
-            "SatisY": 0.1
-        },
-        "GBP": {
             "AlisY": -0.05,
             "SatisY": 0.05
         },
-        "CHF": {
+        "GBP": {
             "AlisY": -0.05,
             "SatisY": 0.05
         }
     },
     "tercih": {
-        "ilk_tercih": "HAREM",
-        "ikinci_tercih": "ALTINKAYNAK"
+        "ilk_tercih": "ALTINKAYNAK",
+        "ikinci_tercih": "ADADA"
     }
 }
