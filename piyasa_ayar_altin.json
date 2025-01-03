@@ -9,24 +9,24 @@
         "SatisY": 1.64,
         "K_Karti": 1.05
     },
-    "YARIM": {
-        "AlisY": 3.19,
-        "SatisY": 3.28,
-        "K_Karti": 1.05
-    },
     "TAM": {
         "AlisY": 6.4,
         "SatisY": 6.54,
         "K_Karti": 1.05
     },
-    "ATA-CMHRYT": {
-        "AlisY": 6.66,
-        "SatisY": 6.72,
-        "K_Karti": 1.05
+    "YARIM": {
+        "AlisY": 3.19,
+        "SatisY": 3.28,
+        "K_Karti": 1.04
     },
     "GREMSE": {
         "AlisY": 15.95,
         "SatisY": 16.3,
+        "K_Karti": 1.05
+    },
+    "ATA-CMHRYT": {
+        "AlisY": 6.66,
+        "SatisY": 6.72,
         "K_Karti": 1.05
     },
     "24 AYR 1GRM": {
@@ -43,11 +43,6 @@
         "AlisY": 1.0,
         "SatisY": 1.0,
         "K_Karti": 1.0
-    },
-    "ff": {
-        "AlisY": 1.0,
-        "SatisY": 2.0,
-        "K_Karti": 3.0
     },
     "ONS": {
         "AlisY": 1.0,
