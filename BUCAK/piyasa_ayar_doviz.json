@@ -11,10 +11,6 @@
         "GBP": {
             "AlisY": -0.05,
             "SatisY": 0.05
-        },
-        "CHF": {
-            "AlisY": -0.01,
-            "SatisY": 0.01
         }
     },
     "tercih": {
