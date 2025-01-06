@@ -4,11 +4,15 @@
             "AlisY": -0.05,
             "SatisY": 0.05
         },
+        "EUR": {
+            "AlisY": -0.05,
+            "SatisY": 0.05
+        },
         "GBP": {
             "AlisY": -0.05,
             "SatisY": 0.05
-        },     
-        "EUR": {
+        },
+        "CHF": {
             "AlisY": -0.05,
             "SatisY": 0.05
         }
