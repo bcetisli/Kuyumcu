@@ -1,5 +1,9 @@
 {
     "doviz": {
+        "CHF": {
+            "AlisY": -0.01,
+            "SatisY": 0.01
+        },
         "USD": {
             "AlisY": -0.05,
             "SatisY": 0.05
