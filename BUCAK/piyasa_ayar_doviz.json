@@ -8,13 +8,17 @@
             "AlisY": -0.05,
             "SatisY": 0.05
         },
+        "CAD": {
+            "AlisY": -0.05,
+            "SatisY": 0.05
+        },
         "GBP": {
             "AlisY": -0.05,
             "SatisY": 0.05
         }
     },
     "tercih": {
-        "ilk_tercih": "ALTINKAYNAK",
+        "ilk_tercih": "HAREM",
         "ikinci_tercih": "KAPALIÇARŞI"
     }
 }
