@@ -15,6 +15,10 @@
         "CAD": {
             "AlisY": -0.05,
             "SatisY": 0.05
+        },
+        "CHF": {
+            "AlisY": -0.05,
+            "SatisY": 0.05
         }
     },
     "tercih": {
