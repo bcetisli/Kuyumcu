@@ -7,14 +7,14 @@
         "EUR": {
             "AlisY": -0.05,
             "SatisY": 0.05
-        },         
+        },
         "GBP": {
             "AlisY": -0.05,
             "SatisY": 0.05
         }
     },
     "tercih": {
-        "ilk_tercih": "HAREM",
+        "ilk_tercih": "ALTINKAYNAK",
         "ikinci_tercih": "KAPALIÇARŞI"
     }
 }
