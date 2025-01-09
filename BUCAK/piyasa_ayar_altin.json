@@ -1,15 +1,20 @@
 {
+    "HAMİDİYE": {
+        "AlisY": 1.89,
+        "SatisY": 1.91,
+        "K_Karti": 1.05
+    },
     "ÇEYREK": {
         "AlisY": 1.62,
         "SatisY": 1.64,
         "K_Karti": 1.05
     },
-    "YARIM": {
+    "TAM": {
         "AlisY": 6.4,
         "SatisY": 6.54,
         "K_Karti": 1.05
     },
-    "TAM": {
+    "YARIM": {
         "AlisY": 3.19,
         "SatisY": 3.28,
         "K_Karti": 1.04
