@@ -8,10 +8,6 @@
             "AlisY": -0.05,
             "SatisY": 0.05
         },
-        "SAR": {
-            "AlisY": 1.0,
-            "SatisY": 1.0
-        },
         "RUB": {
             "AlisY": 1.0,
             "SatisY": 1.0
