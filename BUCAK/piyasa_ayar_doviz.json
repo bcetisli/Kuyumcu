@@ -1,18 +1,14 @@
 {
     "doviz": {
-        "GBP": {
-            "AlisY": -1.0,
-            "SatisY": 1.0
-        },
         "USD": {
-            "AlisY": -1.0,
-            "SatisY": 1.0
+            "AlisY": -0.05,
+            "SatisY": 0.05
         },
         "EUR": {
             "AlisY": -0.05,
             "SatisY": 0.05
         },
-        "CAD": {
+        "GBP": {
             "AlisY": -1.0,
             "SatisY": 1.0
         }
