@@ -11,6 +11,10 @@
         "RUB": {
             "AlisY": 1.0,
             "SatisY": 1.0
+        },
+        "SAR": {
+            "AlisY": -1.0,
+            "SatisY": 1.0
         }
     },
     "tercih": {
