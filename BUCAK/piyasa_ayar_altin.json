@@ -4,6 +4,11 @@
         "SatisY": 1.66,
         "K_Karti": 1.05
     },
+    "KORTECH": {
+        "AlisY": 2.0,
+        "SatisY": 3.0,
+        "K_Karti": 4.0
+    },
     "YARIM": {
         "AlisY": 3.19,
         "SatisY": 3.28,
@@ -38,11 +43,6 @@
         "AlisY": 1.0,
         "SatisY": 1.0,
         "K_Karti": 1.0
-    },
-    "KORTECH": {
-        "AlisY": 2.0,
-        "SatisY": 3.0,
-        "K_Karti": 4.0
     },
     "ONS": {
         "AlisY": 1.0,
