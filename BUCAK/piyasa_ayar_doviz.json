@@ -11,6 +11,10 @@
         "SAR": {
             "AlisY": -1.0,
             "SatisY": 1.0
+        },
+        "CAD": {
+            "AlisY": -1.0,
+            "SatisY": 1.0
         }
     },
     "tercih": {
