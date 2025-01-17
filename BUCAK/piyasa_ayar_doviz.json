@@ -1,9 +1,5 @@
 {
     "doviz": {
-        "CAD": {
-            "AlisY": -1.0,
-            "SatisY": 2.0
-        },
         "USD": {
             "AlisY": -0.05,
             "SatisY": 0.05
@@ -18,7 +14,7 @@
         }
     },
     "tercih": {
-        "ilk_tercih": "KAPALIÇARŞI",
+        "ilk_tercih": "ALTINKAYNAK",
         "ikinci_tercih": "HAREM"
     }
 }
