@@ -8,17 +8,17 @@
             "AlisY": -1.0,
             "SatisY": 1.0
         },
-        "CHF": {
-            "AlisY": -1.0,
-            "SatisY": 1.0
-        },
         "EUR": {
+            "AlisY": -0.05,
+            "SatisY": 0.05
+        },
+        "GBP": {
             "AlisY": -0.05,
             "SatisY": 0.05
         }
     },
     "tercih": {
-        "ilk_tercih": "KAPALIÇARŞI",
+        "ilk_tercih": "ALTINKAYNAK",
         "ikinci_tercih": "HAREM"
     }
 }
