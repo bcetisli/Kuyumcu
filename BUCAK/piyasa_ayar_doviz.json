@@ -1,9 +1,5 @@
 {
     "doviz": {
-        "RUB": {
-            "AlisY": 1.0,
-            "SatisY": 1.0
-        },
         "USD": {
             "AlisY": -0.05,
             "SatisY": 0.05
@@ -11,6 +7,10 @@
         "EUR": {
             "AlisY": -0.05,
             "SatisY": 0.05
+        },
+        "CHF": {
+            "AlisY": -1.0,
+            "SatisY": 1.0
         }
     },
     "tercih": {
