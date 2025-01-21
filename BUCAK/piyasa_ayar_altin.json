@@ -1,47 +1,37 @@
 {
+    "22 BİLEZİK": {
+        "AlisY": 0.91,
+        "SatisY": 0.96,
+        "K_Karti": 1.02
+    },
     "ÇEYREK": {
         "AlisY": 1.6,
         "SatisY": 1.68,
-        "K_Karti": 1.0
+        "K_Karti": 1.02
     },
     "YARIM": {
         "AlisY": 3.2,
         "SatisY": 3.36,
-        "K_Karti": 1.0
+        "K_Karti": 1.02
     },
     "TAM": {
         "AlisY": 6.4,
         "SatisY": 6.72,
-        "K_Karti": 1.0
+        "K_Karti": 1.02
     },
-    "GREMSE": {
-        "AlisY": 15.68,
-        "SatisY": 16.3,
-        "K_Karti": 1.05
+    "ATA-CMHRYT": {
+        "AlisY": 6.59,
+        "SatisY": 6.82,
+        "K_Karti": 1.02
     },
     "24 AYR 1GRM": {
         "AlisY": 0.995,
         "SatisY": 1.008,
-        "K_Karti": 1.01
+        "K_Karti": 1.02
     },
-    "ATA-CMHRYT": {
-        "AlisY": 6.66,
-        "SatisY": 6.72,
-        "K_Karti": 1.05
-    },
-    "22 BİLEZİK": {
-        "AlisY": 0.91,
-        "SatisY": 0.96,
-        "K_Karti": 1.0
-    },
-    "HAS": {
-        "AlisY": 1.0,
-        "SatisY": 1.0,
-        "K_Karti": 1.0
-    },
-    "ONS": {
-        "AlisY": 1.0,
-        "SatisY": 1.0,
-        "K_Karti": 1.0
+    "22 AYR 1 GR": {
+        "AlisY": 0.916,
+        "SatisY": 0.967,
+        "K_Karti": 1.02
     }
 }
