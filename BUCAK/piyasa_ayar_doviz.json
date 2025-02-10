@@ -1,16 +1,16 @@
 {
     "doviz": {
         "USD": {
-            "AlisY": -0.051,
-            "SatisY": 0.05
+            "AlisY": -0.06,
+            "SatisY": 0.06
         },
         "EUR": {
-            "AlisY": -0.05,
-            "SatisY": 0.05
+            "AlisY": -0.06,
+            "SatisY": 0.06
         },
         "GBP": {
-            "AlisY": -0.05,
-            "SatisY": 0.05
+            "AlisY": -0.07,
+            "SatisY": 0.07
         }
     },
     "tercih": {
