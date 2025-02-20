@@ -5,8 +5,8 @@
             "SatisY": 0.08
         },
         "EUR": {
-            "AlisY": -0.08,
-            "SatisY": 0.08
+            "AlisY": -0.07,
+            "SatisY": 0.07
         },
         "GBP": {
             "AlisY": -0.08,
@@ -14,7 +14,7 @@
         }
     },
     "tercih": {
-        "ilk_tercih": "ADADA",
+        "ilk_tercih": "HAREM",
         "ikinci_tercih": "KAPALIÇARŞI"
     }
 }
