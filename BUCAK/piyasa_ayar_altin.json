@@ -1,26 +1,26 @@
 {
     "22 BİLEZİK": {
-        "AlisY": 0.908,
+        "AlisY": 0.909,
         "SatisY": 0.95,
         "K_Karti": 1.02
     },
     "ÇEYREK": {
-        "AlisY": 1.605,
+        "AlisY": 1.61,
         "SatisY": 1.66,
         "K_Karti": 1.02
     },
     "YARIM": {
-        "AlisY": 3.21,
+        "AlisY": 3.22,
         "SatisY": 3.32,
         "K_Karti": 1.02
     },
     "TAM": {
-        "AlisY": 6.42,
+        "AlisY": 6.44,
         "SatisY": 6.64,
         "K_Karti": 1.02
     },
     "ATA-CMHRYT": {
-        "AlisY": 6.62,
+        "AlisY": 6.65,
         "SatisY": 6.82,
         "K_Karti": 1.02
     },
@@ -30,8 +30,8 @@
         "K_Karti": 1.02
     },
     "22 AYR 1 GR": {
-        "AlisY": 0.913,
-        "SatisY": 0.97,
+        "AlisY": 0.912,
+        "SatisY": 0.96,
         "K_Karti": 1.02
     }
 }
