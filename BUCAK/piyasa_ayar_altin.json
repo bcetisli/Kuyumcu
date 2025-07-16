@@ -6,17 +6,17 @@
     },
     "ÇEYREK": {
         "AlisY": 1.6,
-        "SatisY": 1.66,
+        "SatisY": 1.65,
         "K_Karti": 1.02
     },
     "YARIM": {
         "AlisY": 3.2,
-        "SatisY": 3.32,
+        "SatisY": 3.3,
         "K_Karti": 1.02
     },
     "TAM": {
         "AlisY": 6.4,
-        "SatisY": 6.64,
+        "SatisY": 6.6,
         "K_Karti": 1.02
     },
     "ATA-CMHRYT": {
